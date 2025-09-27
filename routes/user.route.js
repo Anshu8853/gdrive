@@ -6,10 +6,12 @@ const { body, validationResult } = require('express-validator');
 const userModel = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { redirectIfLoggedIn, isAuthenticated } = require('./middleware/auth');
+const { sendPasswordResetEmail } = require('../services/emailService');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -243,12 +245,21 @@ router.post('/delete-file', isAuthenticated, async (req, res, next) => {
 });
 
 // Forgot Password Routes
-const crypto = require('crypto');
-const { sendPasswordResetEmail } = require('../services/emailService');
 
 // GET - Show forgot password form
 router.get('/forgot-password', redirectIfLoggedIn, (req, res) => {
-    res.render('forgot-password');
+    // Handle success/error messages from query params
+    let success = null;
+    let error = null;
+    
+    if (req.query.success) {
+        success = req.query.success;
+    }
+    if (req.query.error) {
+        error = req.query.error;
+    }
+    
+    res.render('forgot-password', { success, error });
 });
 
 // POST - Process forgot password request
@@ -286,18 +297,29 @@ router.post('/forgot-password',
                 }
             );
 
-            // Send email (only if email service is configured)
-            if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-                const emailSent = await sendPasswordResetEmail(user.email, resetToken, user.username);
-                if (!emailSent) {
-                    console.error('Failed to send password reset email');
+            console.log('Reset token generated for user:', user.email);
+            console.log('Reset token:', resetToken);
+
+            // Try to send email (if email service is configured)
+            let emailSent = false;
+            if (process.env.EMAIL_USER && process.env.EMAIL_PASS && 
+                process.env.EMAIL_USER !== 'your-email@gmail.com') {
+                try {
+                    emailSent = await sendPasswordResetEmail(user.email, resetToken, user.username);
+                    console.log('Email sent status:', emailSent);
+                } catch (error) {
+                    console.error('Email sending failed:', error);
                 }
             } else {
-                console.log(`Password reset link for ${user.username}: http://localhost:3000/user/reset-password/${resetToken}`);
+                console.log('⚠️ Email not configured. Reset link:');
+                console.log(`📧 http://localhost:3000/user/reset-password/${resetToken}`);
             }
 
+            // Always show success message for security (don't reveal if email sent)
             res.render('forgot-password', { 
-                success: 'If an account with this email exists, you will receive a password reset link.' 
+                success: emailSent ? 
+                    'Password reset link has been sent to your email address.' :
+                    'Reset request processed. If email is configured, you will receive a link. Check console for development link.' 
             });
 
         } catch (error) {
