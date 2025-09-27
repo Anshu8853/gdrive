@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema({
     email: { type: String, trim: true, lowercase: true, unique: true ,minlength:[13,'Email must be at least 13 characters long']}, 
     password: { type: String, trim: true,minlength:[8,'Password must be at least 8 characters long']},
     file: { type: [{ type: String }], default: [] },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' }
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date }
 });
 
 const User = mongoose.model('user', userSchema);
