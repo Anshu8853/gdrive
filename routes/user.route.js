@@ -121,7 +121,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
         res.redirect('/home?upload=success');
     } catch (error) {
-        console.error(error);
+        console.error('Upload Error:', error); // Improved error logging
         res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 });
@@ -155,7 +155,7 @@ router.post('/delete-file', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error('Delete Error:', error); // Improved error logging
         res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 });
