@@ -1,70 +1,158 @@
-<!doctype html>
-<html>
+<!doctype html><!doctype html>
 
-<head>
-    <meta    <button type="submit"
-        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
-        
-    <!-- Forgot Password Link -->
-    <div class="mt-4 text-center">
-        <a href="/user/forgot-password" class="text-sm text-blue-600 hover:underline dark:text-blue-500">
+<html><html>
+
+
+
+<head><head>
+
+    <meta charset="UTF-8" />    <meta    <button type="submit"
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>        
+
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />    <!-- Forgot Password Link -->
+
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />    <div class="mt-4 text-center">
+
+</head>        <a href="/user/forgot-password" class="text-sm text-blue-600 hover:underline dark:text-blue-500">
+
             Forgot your password?
-        </a>
-    </div>
-        
-    <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-4">
-        Don't have an account yet? <a href="/user/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
-    </p>
-</form>et="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<body class="bg-gray-100 dark:bg-gray-800 min-h-screen flex items-center justify-center py-12 px-4">        </a>
+
+    <div class="w-full max-w-md">    </div>
+
+        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-8">        
+
+            <!-- Header -->    <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-4">
+
+            <div class="text-center mb-8">        Don't have an account yet? <a href="/user/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
+
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</h1>    </p>
+
+                <p class="text-gray-600 dark:text-gray-400">Sign in to your account</p></form>et="UTF-8" />
+
+            </div>    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
-</head>
 
-<body class="bg-gray-100 dark:bg-gray-800 h-screen w-secreen flex items-center justify-center">
-    <form action="/user/login" method="POST" class="w-96">
-        <% if (typeof error != 'undefined' && error) { %>
-            <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
-                <svg class="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+            <!-- Error Message -->    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+
+            <% if (typeof error != 'undefined' && error) { %></head>
+
+                <div class="flex items-center p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 border border-red-200 dark:border-red-800" role="alert">
+
+                    <i class="ri-error-warning-line mr-3 text-lg"></i><body class="bg-gray-100 dark:bg-gray-800 h-screen w-secreen flex items-center justify-center">
+
+                    <div>    <form action="/user/login" method="POST" class="w-96">
+
+                        <span class="font-medium">Login failed!</span> <%= error %>        <% if (typeof error != 'undefined' && error) { %>
+
+                    </div>            <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+
+                </div>                <svg class="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+
+            <% } %>                  <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+
                 </svg>
-                <span class="sr-only">Info</span>
-                <div>
-                  <span class="font-medium">Login failed!</span> <%= error %>
-                </div>
-              </div>
-        <% } %>
 
-    <div>
-        <label for="User_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User name
-        </label>
-        <input type="text" id="User_name"
+            <!-- Login Form -->                <span class="sr-only">Info</span>
+
+            <form action="/user/login" method="POST" class="space-y-6">                <div>
+
+                <!-- Username Field -->                  <span class="font-medium">Login failed!</span> <%= error %>
+
+                <div>                </div>
+
+                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">              </div>
+
+                        <i class="ri-user-line mr-1"></i>Username        <% } %>
+
+                    </label>
+
+                    <input type="text" id="username" name="username" required    <div>
+
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"        <label for="User_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User name
+
+                        placeholder="Enter your username" />        </label>
+
+                </div>        <input type="text" id="User_name"
+
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="John" name="username" required />
-    </div>
 
+                <!-- Password Field -->            placeholder="John" name="username" required />
 
+                <div>    </div>
 
+                    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
 
+                        <i class="ri-lock-line mr-1"></i>Password
 
+                    </label>
 
-    <div class="mb-6">
+                    <input type="password" id="password" name="password" required
+
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+
+                        placeholder="Enter your password" />
+
+                </div>    <div class="mb-6">
+
         <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-        <input type="password" id="password"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="•••••••••" name="password" equired />
-    </div>
+
+                <!-- Submit Button -->        <input type="password" id="password"
+
+                <button type="submit"            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+
+                    class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors">            placeholder="•••••••••" name="password" equired />
+
+                    <i class="ri-login-box-line mr-2"></i>Sign In    </div>
+
+                </button>
 
     <button type="submit"
-        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
-        <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-4">
-            Don’t have an account yet? <a href="/user/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
-        </p>
-</form>
+
+                <!-- Forgot Password Link -->        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+
+                <div class="text-center">        <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-4">
+
+                    <a href="/user/forgot-password" class="text-sm text-blue-600 hover:underline dark:text-blue-500">            Don’t have an account yet? <a href="/user/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
+
+                        <i class="ri-key-line mr-1"></i>Forgot your password?        </p>
+
+                    </a></form>
+
+                </div>
+
+            </form>
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+            <!-- Sign Up Link --><script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+
+            <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600"></body>
+
+                <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+
+                    Don't have an account yet? </html>
+                    <a href="/user/register" class="font-medium text-blue-600 hover:underline dark:text-blue-500">
+                        <i class="ri-user-add-line mr-1"></i>Sign up
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="text-center mt-6">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                © 2025 GDrive. Secure file storage for everyone.
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 </body>
 
 </html>
