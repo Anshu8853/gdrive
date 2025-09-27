@@ -43,10 +43,15 @@ router.get('/dashboard', isAdmin, async (req, res, next) => {
 // Admin route to delete any user's file
 router.post('/delete-user-file', isAdmin, async (req, res, next) => {
     try {
+        console.log('Admin delete request body:', req.body);
         const { userId, filename } = req.body;
         
+        console.log('Extracted values:', { userId, filename });
+        
         if (!userId || !filename) {
-            return res.status(400).json({ message: 'User ID and filename are required' });
+            console.log('Delete validation error: Missing userId or filename');
+            console.log('userId:', userId, 'filename:', filename);
+            return res.redirect('/admin/dashboard?error=User ID and filename are required');
         }
 
         console.log(`Admin ${req.user.username} attempting to delete file ${filename} for user ${userId}`);
@@ -86,7 +91,7 @@ router.post('/delete-user-file', isAdmin, async (req, res, next) => {
 
     } catch (error) {
         console.error('Admin delete file error:', error);
-        next(error);
+        res.redirect('/admin/dashboard?error=Failed to delete file: ' + error.message);
     }
 });
 
