@@ -10,12 +10,19 @@ router.get('/', (req, res) => {
 router.get('/home', isAuthenticated, async (req, res, next) => {
     try {
         const user = await userModel.findById(req.user.userId);
+        if (!user) {
+            console.log('User not found, clearing cookie and redirecting to login');
+            res.clearCookie('token');
+            return res.redirect('/user/login');
+        }
         res.render('home', { 
             user, 
             cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME 
         });
     } catch (error) {
-        next(error);
+        console.error('Home route error:', error);
+        res.clearCookie('token');
+        res.redirect('/user/login');
     }
 });
 

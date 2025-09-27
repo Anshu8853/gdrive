@@ -43,16 +43,23 @@ router.post('/register',
             if (!errors.isEmpty()) {
                return res.status(400).json({
                 errors: errors.array(),
-               message: 'Invalid data '});
+               message: 'Invalid data'});
             }
                const { username, email, password } = req.body;
                const hashPassword = await bcrypt.hash(password, 10);
                const newUser = await userModel.create({ username, email ,password: hashPassword});
             
-              
+               console.log('New user created:', newUser.username);
                res.clearCookie('token');
-               res.json(newUser);
+               res.status(201).json({ 
+                   message: 'User registered successfully',
+                   username: newUser.username 
+               });
         } catch (error) {
+            console.error('Registration error:', error);
+            if (error.code === 11000) {
+                return res.status(400).json({ message: 'Username or email already exists' });
+            }
             next(error);
         }
 })
@@ -94,6 +101,13 @@ router.post('/login',
 
 router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, next) => {
     try {
+        console.log('Upload attempt - req.file:', req.file);
+        
+        if (!req.file) {
+            console.log('No file uploaded');
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
         const user = await userModel.findById(req.user.userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -106,12 +120,15 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, 
             files = [user.file];
         }
 
-        files.push(req.file.public_id); // Save the Cloudinary public_id
+        console.log('Adding file public_id:', req.file.filename || req.file.public_id);
+        files.push(req.file.filename || req.file.public_id); // Save the Cloudinary public_id
 
         await userModel.updateOne({ _id: user._id }, { $set: { file: files } });
+        console.log('File saved to user:', user.username);
 
         res.redirect('/home?upload=success');
     } catch (error) {
+        console.error('Upload error:', error);
         next(error);
     }
 });
