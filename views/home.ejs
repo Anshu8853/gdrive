@@ -42,7 +42,7 @@
         .file-info { flex: 1; }
         .file-name { color: #333; font-weight: 500; margin-bottom: 3px; }
         .file-date { color: #666; font-size: 12px; }
-        .file-actions { display: flex; gap: 10px; align-items: center; min-width: 140px; justify-content: flex-end; }
+        .file-actions { display: flex; gap: 10px; align-items: center; min-width: 160px; justify-content: flex-end; }
         .view-btn { 
             background: #007bff; 
             color: white; 
@@ -53,7 +53,8 @@
             font-size: 12px; 
             cursor: pointer;
             font-weight: 500;
-            min-width: 50px;
+            min-width: 70px;
+            width: 70px;
             text-align: center;
         }
         .view-btn:hover { background: #0056b3; color: white; }
@@ -66,7 +67,8 @@
             cursor: pointer; 
             font-size: 12px; 
             font-weight: 500;
-            min-width: 60px;
+            min-width: 70px;
+            width: 70px;
             text-align: center;
         }
         .delete-btn:hover { background: #c82333; }
@@ -205,7 +207,7 @@
                         <a href="<%= fileUrl || '#' %>" 
                            target="_blank" class="view-btn"
                            <% if (!fileUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
-                           
+
                             View
                         </a>
                         <form action="/user/delete-file" method="POST" style="display: inline;">
