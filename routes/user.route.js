@@ -85,27 +85,39 @@ router.post('/login',
       body('username').trim().isLength({ min: 3 }).toLowerCase(),
       body('password').trim().isLength({ min: 5 }),
       async (req, res) => {
-         const errors = validationResult(req);
-if (!errors.isEmpty()) {   
-   return res.render('login', { error: 'Invalid data' });
-}
-const { username, password } = req.body;
+        try {
+            console.log('Login route started.');
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {   
+                console.log('Validation failed.');
+                return res.render('login', { error: 'Invalid data' });
+            }
+            console.log('Validation passed.');
+            const { username, password } = req.body;
 
-const user = await userModel.findOne({ username });
+            const user = await userModel.findOne({ username });
+            console.log('User found:', !!user);
 
-if(!user){
-      return res.render('login', { error: 'Invalid username or password' });
-}
-const isMatch= await bcrypt.compare(password, user.password);
+            if(!user){
+                return res.render('login', { error: 'Invalid username or password' });
+            }
+            const isMatch = await bcrypt.compare(password, user.password);
+            console.log('Password match:', isMatch);
 
-if(!isMatch){
-      return res.render('login', { error: 'Invalid username or password' });
-}
-   const token = jwt.sign({ userId: user._id, username: user.username, email: user.email, role: user.role },
-       process.env.JWT_SECRET, { expiresIn: '24h' ,});
-
-       res.cookie('token', token);
-       res.redirect('/home');
+            if(!isMatch){
+                return res.render('login', { error: 'Invalid username or password' });
+            }
+            console.log('Creating token...');
+            const token = jwt.sign({ userId: user._id, username: user.username, email: user.email, role: user.role },
+                process.env.JWT_SECRET, { expiresIn: '24h' ,});
+            
+            console.log('Token created. Setting cookie and redirecting...');
+            res.cookie('token', token);
+            res.redirect('/home');
+        } catch (error) {
+            console.error('Login route error:', error);
+            res.status(500).send('Server error during login');
+        }
       })
 
 router.post('/upload', upload.single('file'), async (req, res) => {
