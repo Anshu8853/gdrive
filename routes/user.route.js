@@ -61,9 +61,9 @@ router.post('/register',
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-               return res.status(400).json({
-                errors: errors.array(),
-               message: 'Invalid data'});
+               return res.render('register', { 
+                   error: 'Please check your input: ' + errors.array().map(e => e.msg).join(', ')
+               });
             }
                const { username, email, password } = req.body;
                const hashPassword = await bcrypt.hash(password, 10);
@@ -71,22 +71,28 @@ router.post('/register',
             
                console.log('New user created:', newUser.username);
                res.clearCookie('token');
-               res.status(201).json({ 
-                   message: 'User registered successfully',
-                   username: newUser.username 
-               });
+               
+               // Redirect to login with success message instead of JSON response
+               res.redirect('/user/login?success=Account created successfully! Please login.');
         } catch (error) {
             console.error('Registration error:', error);
             if (error.code === 11000) {
-                return res.status(400).json({ message: 'Username or email already exists' });
+                return res.render('register', { error: 'Username or email already exists' });
             }
-            next(error);
+            return res.render('register', { error: 'Registration failed. Please try again.' });
         }
 })
 
 router.get('/login', redirectIfLoggedIn, (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.render('login');
+    
+    // Handle success message from registration
+    let success = null;
+    if (req.query.success) {
+        success = req.query.success;
+    }
+    
+    res.render('login', { success });
 });
 
 router.post('/login', 

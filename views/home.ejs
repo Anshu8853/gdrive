@@ -205,6 +205,7 @@
                         <a href="<%= fileUrl || '#' %>" 
                            target="_blank" class="view-btn"
                            <% if (!fileUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
+                           
                             View
                         </a>
                         <form action="/user/delete-file" method="POST" style="display: inline;">
