@@ -13,10 +13,10 @@
         }
     ],
     "env": {
-        "MONGODB_URI": "@mongodb-uri",
-        "JWT_SECRET": "@jwt-secret",
-        "CLOUDINARY_CLOUD_NAME": "@cloudinary-cloud-name",
-        "CLOUDINARY_API_KEY": "@cloudinary-api-key",
-        "CLOUDINARY_API_SECRET": "@cloudinary-api-secret"
+        "MONGODB_URI": "@MONGODB_URI",
+        "JWT_SECRET": "@JWT_SECRET",
+        "CLOUDINARY_CLOUD_NAME": "@CLOUDINARY_CLOUD_NAME",
+        "CLOUDINARY_API_KEY": "@CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET": "@CLOUDINARY_API_SECRET"
     }
 }

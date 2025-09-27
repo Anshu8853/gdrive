@@ -1,33 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
-
-const isAuthenticated = (req, res, next) => {
-    const token = req.cookies.token;
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = decoded;
-            next();
-        } catch (error) {
-            res.redirect('/user/register');
-        }
-    } else {
-        res.redirect('/user/register');
-    }
-};
+const { isAuthenticated } = require('./middleware/auth');
 
 router.get('/', (req, res) => {
-    res.render('register');
+    res.render('login');
 });
 
-router.get('/home', isAuthenticated, async (req, res) => {
-    const user = await userModel.findById(req.user.userId);
-    res.render('home', { 
-        user, 
-        cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME 
-    });
+router.get('/home', isAuthenticated, async (req, res, next) => {
+    try {
+        const user = await userModel.findById(req.user.userId);
+        res.render('home', { 
+            user, 
+            cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME 
+        });
+    } catch (error) {
+        next(error);
+    }
 });
 
 module.exports = router;

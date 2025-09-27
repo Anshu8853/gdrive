@@ -22,7 +22,6 @@ const adminRouter = require('./routes/admin.routes');
 const connectToDB = require('./routes/config/db');
 const cookieParser = require('cookie-parser');
 const indexRouter = require('./routes/index.routes');
-const multer = require('multer');
 
 // Connect to MongoDB
 (async () => {
@@ -30,6 +29,7 @@ const multer = require('multer');
     await connectToDB();
   } catch (error) {
     console.error("Failed to connect to the database. The application will not start.", error);
+    process.exit(1);
   }
 })();
 
@@ -50,6 +50,12 @@ app.use('/uploads', express.static('uploads'));
 app.use('/', indexRouter);
 app.use('/user', userRouter);
 app.use('/admin', adminRouter);
+
+// Centralized error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: 'Something went wrong!' });
+});
 
 // Export the app for Vercel
 module.exports = app;
