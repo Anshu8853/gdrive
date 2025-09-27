@@ -1,99 +1,194 @@
-<!doctype html><!doctype html>
+<!doctype html><!doctype html><!doctype html>
 
-<html><html>
+<html lang="en">
 
+<head><html><html>
 
+    <meta charset="UTF-8">
 
-<head><head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta charset="UTF-8" />    <meta    <button type="submit"
+    <title>Login - GDrive</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script><head><head>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>        
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
 
-    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />    <!-- Forgot Password Link -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />    <meta charset="UTF-8" />    <meta    <button type="submit"
 
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />    <div class="mt-4 text-center">
+</head>
 
-</head>        <a href="/user/forgot-password" class="text-sm text-blue-600 hover:underline dark:text-blue-500">
+<body class="bg-gray-50 dark:bg-gray-900">    <meta name="viewport" content="width=device-width, initial-scale=1.0" />        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
 
-            Forgot your password?
+    <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
 
-<body class="bg-gray-100 dark:bg-gray-800 min-h-screen flex items-center justify-center py-12 px-4">        </a>
+        <!-- Logo -->    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>        
 
-    <div class="w-full max-w-md">    </div>
+        <div class="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
 
-        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-8">        
+            <i class="ri-drive-line text-3xl text-blue-600 mr-2"></i>    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />    <!-- Forgot Password Link -->
 
-            <!-- Header -->    <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-4">
+            GDrive
 
-            <div class="text-center mb-8">        Don't have an account yet? <a href="/user/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
+        </div>    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />    <div class="mt-4 text-center">
 
-                <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</h1>    </p>
+        
 
-                <p class="text-gray-600 dark:text-gray-400">Sign in to your account</p></form>et="UTF-8" />
+        <!-- Login Card --></head>        <a href="/user/forgot-password" class="text-sm text-blue-600 hover:underline dark:text-blue-500">
 
-            </div>    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+            <div class="p-6 space-y-4 md:space-y-6 sm:p-8">            Forgot your password?
 
-            <!-- Error Message -->    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+                <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
 
-            <% if (typeof error != 'undefined' && error) { %></head>
+                    Welcome Back<body class="bg-gray-100 dark:bg-gray-800 min-h-screen flex items-center justify-center py-12 px-4">        </a>
 
-                <div class="flex items-center p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 border border-red-200 dark:border-red-800" role="alert">
+                </h1>
 
-                    <i class="ri-error-warning-line mr-3 text-lg"></i><body class="bg-gray-100 dark:bg-gray-800 h-screen w-secreen flex items-center justify-center">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Sign in to your account</p>    <div class="w-full max-w-md">    </div>
 
-                    <div>    <form action="/user/login" method="POST" class="w-96">
+                
 
-                        <span class="font-medium">Login failed!</span> <%= error %>        <% if (typeof error != 'undefined' && error) { %>
+                <!-- Error Message -->        <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-8">        
 
-                    </div>            <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                <% if (typeof error != 'undefined' && error) { %>
 
-                </div>                <svg class="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 border border-red-200 dark:border-red-800" role="alert">            <!-- Header -->    <p class="text-sm font-light text-gray-500 dark:text-gray-400 mt-4">
 
-            <% } %>                  <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                    <i class="ri-error-warning-line flex-shrink-0 inline w-4 h-4 me-3"></i>
 
-                </svg>
+                    <span class="sr-only">Danger</span>            <div class="text-center mb-8">        Don't have an account yet? <a href="/user/register" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</a>
 
-            <!-- Login Form -->                <span class="sr-only">Info</span>
+                    <div>
 
-            <form action="/user/login" method="POST" class="space-y-6">                <div>
+                        <span class="font-medium">Login failed!</span> <%= error %>                <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Welcome Back</h1>    </p>
 
-                <!-- Username Field -->                  <span class="font-medium">Login failed!</span> <%= error %>
+                    </div>
 
-                <div>                </div>
+                </div>                <p class="text-gray-600 dark:text-gray-400">Sign in to your account</p></form>et="UTF-8" />
 
-                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">              </div>
+                <% } %>
 
-                        <i class="ri-user-line mr-1"></i>Username        <% } %>
+                            </div>    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-                    </label>
+                <!-- Login Form -->
 
-                    <input type="text" id="username" name="username" required    <div>
+                <form class="space-y-4 md:space-y-6" action="/user/login" method="POST">    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"        <label for="User_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User name
+                    <!-- Username -->
 
-                        placeholder="Enter your username" />        </label>
+                    <div>            <!-- Error Message -->    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
 
-                </div>        <input type="text" id="User_name"
+                        <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
 
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            <i class="ri-user-line mr-1"></i>Username            <% if (typeof error != 'undefined' && error) { %></head>
 
-                <!-- Password Field -->            placeholder="John" name="username" required />
+                        </label>
 
-                <div>    </div>
+                        <input type="text" name="username" id="username"                 <div class="flex items-center p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 border border-red-200 dark:border-red-800" role="alert">
 
-                    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                               class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
 
-                        <i class="ri-lock-line mr-1"></i>Password
+                               placeholder="Enter your username" required>                    <i class="ri-error-warning-line mr-3 text-lg"></i><body class="bg-gray-100 dark:bg-gray-800 h-screen w-secreen flex items-center justify-center">
 
-                    </label>
+                    </div>
 
-                    <input type="password" id="password" name="password" required
+                                        <div>    <form action="/user/login" method="POST" class="w-96">
 
+                    <!-- Password -->
+
+                    <div>                        <span class="font-medium">Login failed!</span> <%= error %>        <% if (typeof error != 'undefined' && error) { %>
+
+                        <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+
+                            <i class="ri-lock-line mr-1"></i>Password                    </div>            <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+
+                        </label>
+
+                        <input type="password" name="password" id="password"                 </div>                <svg class="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+
+                               class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
+
+                               placeholder="••••••••" required>            <% } %>                  <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+
+                    </div>
+
+                                    </svg>
+
+                    <!-- Submit Button -->
+
+                    <button type="submit"             <!-- Login Form -->                <span class="sr-only">Info</span>
+
+                            class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+
+                        <i class="ri-login-box-line mr-2"></i>Sign In            <form action="/user/login" method="POST" class="space-y-6">                <div>
+
+                    </button>
+
+                                    <!-- Username Field -->                  <span class="font-medium">Login failed!</span> <%= error %>
+
+                    <!-- Forgot Password Link -->
+
+                    <div class="text-center">                <div>                </div>
+
+                        <a href="/user/forgot-password" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
+
+                            <i class="ri-key-line mr-1"></i>Forgot your password?                    <label for="username" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">              </div>
+
+                        </a>
+
+                    </div>                        <i class="ri-user-line mr-1"></i>Username        <% } %>
+
+                </form>
+
+                                    </label>
+
+                <!-- Sign Up Link -->
+
+                <div class="text-center pt-4 border-t border-gray-200 dark:border-gray-700">                    <input type="text" id="username" name="username" required    <div>
+
+                    <p class="text-sm font-light text-gray-500 dark:text-gray-400">
+
+                        Don't have an account yet?                         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"        <label for="User_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">User name
+
+                        <a href="/user/register" class="font-medium text-blue-600 hover:underline dark:text-blue-500">
+
+                            <i class="ri-user-add-line mr-1"></i>Sign up                        placeholder="Enter your username" />        </label>
+
+                        </a>
+
+                    </p>                </div>        <input type="text" id="User_name"
+
+                </div>
+
+            </div>            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+
+        </div>
+
+                        <!-- Password Field -->            placeholder="John" name="username" required />
+
+        <!-- Footer -->
+
+        <div class="text-center mt-8">                <div>    </div>
+
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+
+                © 2025 GDrive. Secure file storage for everyone.                    <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+
+            </p>
+
+        </div>                        <i class="ri-lock-line mr-1"></i>Password
+
+    </div>
+
+                        </label>
+
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+
+</body>                    <input type="password" id="password" name="password" required
+
+</html>
                         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
 
                         placeholder="Enter your password" />
