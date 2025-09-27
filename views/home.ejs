@@ -39,7 +39,21 @@
             justify-content: space-between; 
             align-items: center; 
         }
-        .file-name { color: #333; font-weight: 500; }
+        .file-info { flex: 1; }
+        .file-name { color: #333; font-weight: 500; margin-bottom: 3px; }
+        .file-date { color: #666; font-size: 12px; }
+        .file-actions { display: flex; gap: 8px; align-items: center; }
+        .view-btn { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-size: 12px; 
+            cursor: pointer;
+        }
+        .view-btn:hover { background: #0056b3; color: white; }
         .delete-btn { 
             background: #dc3545; 
             color: white; 
@@ -86,17 +100,38 @@
         </div>
         <% } %>
         
-        <form action="/user/upload" method="POST" enctype="multipart/form-data">
+        <form action="/user/upload" method="POST" enctype="multipart/form-data" onsubmit="return validateFile()">
             <div class="form-group">
-                <label for="file"> Choose File to Upload</label>
-                <input type="file" id="file" name="file" required accept=".jpg,.jpeg,.png,.pdf">
+                <label for="file">🗂️ Choose File to Upload</label>
+                <input type="file" id="file" name="file" required accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx">
                 <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
-                    Supported formats: JPG, PNG, PDF
+                    Supported formats: JPG, PNG, PDF, TXT, DOC, DOCX (Max: 10MB)
                 </small>
             </div>
             
-            <button type="submit"> Upload File</button>
+            <button type="submit">📤 Upload File</button>
         </form>
+        
+        <script>
+        function validateFile() {
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload!');
+                return false;
+            }
+            
+            // Check file size (10MB limit)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 10MB!');
+                return false;
+            }
+            
+            return true;
+        }
+        </script>
         
         <div class="file-section">
             <h2> Your Files (<%= user.files ? user.files.length : 0 %>)</h2>
@@ -104,21 +139,46 @@
             <% if (user.files && user.files.length > 0) { %>
                 <% user.files.forEach(function(file) { %>
                 <div class="file-item">
-                    <div class="file-name">
-                         <% if (typeof file === 'string') { %>
-                            <%= file %>
-                        <% } else if (file.filename) { %>
-                            <%= file.originalName || file.filename %>
-                        <% } else { %>
-                            Unknown file
+                    <div class="file-info">
+                        <div class="file-name">
+                            <% if (typeof file === 'string') { %>
+                                <%= file %>
+                            <% } else if (file.filename) { %>
+                                <%= file.originalName || file.filename %>
+                            <% } else { %>
+                                Unknown file
+                            <% } %>
+                        </div>
+                        <% if (file.uploadDate) { %>
+                        <div class="file-date">
+                            Uploaded: <%= new Date(file.uploadDate).toLocaleDateString() %>
+                        </div>
                         <% } %>
                     </div>
-                    <form action="/user/delete-file" method="POST" style="display: inline;">
-                        <input type="hidden" name="filename" value="<%= typeof file === 'string' ? file : file.filename %>">
-                        <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this file?')">
-                             Delete
-                        </button>
-                    </form>
+                    <div class="file-actions">
+                        <% 
+                        let fileUrl = '';
+                        if (typeof file === 'string') {
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/drive-uploads/${file}`;
+                        } else if (file.cloudinaryUrl) {
+                            fileUrl = file.cloudinaryUrl;
+                        } else if (file.filename) {
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/drive-uploads/${file.filename}`;
+                        }
+                        %>
+                        <% if (fileUrl) { %>
+                        <a href="<%= fileUrl %>" 
+                           target="_blank" class="view-btn">
+                            View
+                        </a>
+                        <% } %>
+                        <form action="/user/delete-file" method="POST" style="display: inline;">
+                            <input type="hidden" name="filename" value="<%= typeof file === 'string' ? file : file.filename %>">
+                            <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this file?')">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
                 </div>
                 <% }); %>
             <% } else { %>

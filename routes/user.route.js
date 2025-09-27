@@ -23,11 +23,31 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'drive-uploads',
-        allowed_formats: ['jpg', 'png', 'pdf']
+        allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'txt', 'doc', 'docx'],
+        resource_type: 'auto' // This allows different file types
     },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        console.log('File filter - mimetype:', file.mimetype);
+        const allowedTypes = [
+            'image/jpeg', 'image/jpg', 'image/png', 
+            'application/pdf', 'text/plain',
+            'application/msword', 
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPG, PNG, PDF, TXT, DOC, and DOCX files are allowed.'));
+        }
+    }
+});
 
 router.get('/register', redirectIfLoggedIn, (req, res) => { 
     res.render('register');
@@ -100,17 +120,33 @@ router.post('/login',
         }
       })
 
-router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, next) => {
+router.post('/upload', isAuthenticated, (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            console.error('Multer error:', err);
+            if (err instanceof multer.MulterError) {
+                if (err.code === 'LIMIT_FILE_SIZE') {
+                    return res.redirect('/home?error=File size too large (max 10MB)');
+                }
+                return res.redirect('/home?error=Upload error: ' + err.message);
+            }
+            return res.redirect('/home?error=' + err.message);
+        }
+        next();
+    });
+}, async (req, res, next) => {
     try {
         console.log('Upload attempt - req.file:', req.file);
+        console.log('User ID:', req.user.userId);
         
         if (!req.file) {
-            console.log('No file uploaded');
+            console.log('No file uploaded - req.file is null/undefined');
             return res.redirect('/home?error=No file selected');
         }
 
         const user = await userModel.findById(req.user.userId);
         if (!user) {
+            console.log('User not found in database');
             return res.redirect('/home?error=User not found');
         }
 
@@ -121,25 +157,35 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, 
             files = [user.file];
         }
 
-        const fileName = req.file.filename || req.file.public_id;
-        console.log('Adding file:', fileName);
+        // For Cloudinary, we need to use public_id or filename
+        const fileName = req.file.public_id || req.file.filename;
+        console.log('File details:', {
+            originalname: req.file.originalname,
+            filename: req.file.filename,
+            public_id: req.file.public_id,
+            secure_url: req.file.secure_url,
+            resource_type: req.file.resource_type
+        });
         
         // Create file object with more details
         const fileData = {
             filename: fileName,
             originalName: req.file.originalname,
-            uploadDate: new Date()
+            uploadDate: new Date(),
+            cloudinaryUrl: req.file.secure_url,
+            publicId: req.file.public_id
         };
         
         files.push(fileData);
 
-        await userModel.updateOne({ _id: user._id }, { $set: { file: files } });
+        const updateResult = await userModel.updateOne({ _id: user._id }, { $set: { file: files } });
+        console.log('Database update result:', updateResult);
         console.log('File saved to user:', user.username);
 
         res.redirect('/home?upload=success');
     } catch (error) {
-        console.error('Upload error:', error);
-        res.redirect('/home?error=Upload failed');
+        console.error('Upload error details:', error);
+        res.redirect('/home?error=Upload failed: ' + error.message);
     }
 });
 

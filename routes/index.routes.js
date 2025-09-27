@@ -18,11 +18,16 @@ router.get('/home', isAuthenticated, async (req, res, next) => {
         
         // Handle success message from upload
         let success = null;
+        let error = null;
+        
         if (req.query.upload === 'success') {
             success = 'File uploaded successfully!';
         }
         if (req.query.delete === 'success') {
             success = 'File deleted successfully!';
+        }
+        if (req.query.error) {
+            error = req.query.error;
         }
         
         // Map file array to files for template consistency
@@ -31,6 +36,7 @@ router.get('/home', isAuthenticated, async (req, res, next) => {
         res.render('home', { 
             user, 
             success,
+            error,
             cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME 
         });
     } catch (error) {
