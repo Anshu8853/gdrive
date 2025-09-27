@@ -143,13 +143,15 @@
                         <div class="file-name">
                             <% if (typeof file === 'string') { %>
                                 <%= file %>
+                            <% } else if (file.originalName) { %>
+                                <%= file.originalName %>
                             <% } else if (file.filename) { %>
-                                <%= file.originalName || file.filename %>
+                                <%= file.filename %>
                             <% } else { %>
                                 Unknown file
                             <% } %>
                         </div>
-                        <% if (file.uploadDate) { %>
+                        <% if (file.uploadDate || (typeof file === 'object' && file.uploadDate)) { %>
                         <div class="file-date">
                             Uploaded: <%= new Date(file.uploadDate).toLocaleDateString() %>
                         </div>
@@ -158,12 +160,24 @@
                     <div class="file-actions">
                         <% 
                         let fileUrl = '';
+                        let fileId = '';
+                        
                         if (typeof file === 'string') {
-                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/drive-uploads/${file}`;
+                            // Old format - file is just a string (public_id)
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file}`;
+                            fileId = file;
                         } else if (file.cloudinaryUrl) {
+                            // New format - file has cloudinaryUrl
                             fileUrl = file.cloudinaryUrl;
+                            fileId = file.filename || file.publicId;
                         } else if (file.filename) {
-                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/drive-uploads/${file.filename}`;
+                            // New format without cloudinaryUrl - construct URL
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.filename}`;
+                            fileId = file.filename;
+                        } else if (file.publicId) {
+                            // Use publicId
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.publicId}`;
+                            fileId = file.publicId;
                         }
                         %>
                         <% if (fileUrl) { %>
@@ -173,7 +187,7 @@
                         </a>
                         <% } %>
                         <form action="/user/delete-file" method="POST" style="display: inline;">
-                            <input type="hidden" name="filename" value="<%= typeof file === 'string' ? file : file.filename %>">
+                            <input type="hidden" name="filename" value="<%= fileId %>">
                             <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this file?')">
                                 Delete
                             </button>

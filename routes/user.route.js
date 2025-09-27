@@ -164,7 +164,9 @@ router.post('/upload', isAuthenticated, (req, res, next) => {
             filename: req.file.filename,
             public_id: req.file.public_id,
             secure_url: req.file.secure_url,
-            resource_type: req.file.resource_type
+            resource_type: req.file.resource_type,
+            url: req.file.url,
+            path: req.file.path
         });
         
         // Create file object with more details
@@ -172,7 +174,7 @@ router.post('/upload', isAuthenticated, (req, res, next) => {
             filename: fileName,
             originalName: req.file.originalname,
             uploadDate: new Date(),
-            cloudinaryUrl: req.file.secure_url,
+            cloudinaryUrl: req.file.secure_url || req.file.url || req.file.path,
             publicId: req.file.public_id
         };
         
@@ -209,6 +211,8 @@ router.post('/delete-file', isAuthenticated, async (req, res, next) => {
                     return file !== filename;
                 } else if (typeof file === 'object' && file.filename) {
                     return file.filename !== filename;
+                } else if (typeof file === 'object' && file.publicId) {
+                    return file.publicId !== filename;
                 }
                 return true;
             });
@@ -216,7 +220,7 @@ router.post('/delete-file', isAuthenticated, async (req, res, next) => {
 
         await userModel.updateOne({ _id: user._id }, { $set: { file: updatedFiles } });
 
-        // Delete from Cloudinary
+        // Delete from Cloudinary - use the filename as public_id
         cloudinary.uploader.destroy(filename, (error, result) => {
             if (error) {
                 console.error('Cloudinary delete error:', error);
