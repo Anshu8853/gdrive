@@ -275,10 +275,14 @@ router.post('/forgot-password',
             }
 
             const { email } = req.body;
+            console.log(`Forgot password request for email: ${email}`);
+            
             const user = await userModel.findOne({ email: email.toLowerCase() });
+            console.log(`User found:`, user ? `Yes (${user.username})` : 'No');
 
             // Always show success message (don't reveal if email exists)
             if (!user) {
+                console.log('User not found - showing generic success message');
                 return res.render('forgot-password', { 
                     success: 'If an account with this email exists, you will receive a password reset link.' 
                 });
@@ -302,6 +306,8 @@ router.post('/forgot-password',
 
             // Try to send email (if email service is configured)
             let emailSent = false;
+            let resetLink = null;
+            
             if (process.env.EMAIL_USER && process.env.EMAIL_PASS && 
                 process.env.EMAIL_USER !== 'your-email@gmail.com') {
                 try {
@@ -311,16 +317,27 @@ router.post('/forgot-password',
                     console.error('Email sending failed:', error);
                 }
             } else {
+                // Email not configured - provide link directly to user
+                resetLink = `http://localhost:3000/user/reset-password/${resetToken}`;
                 console.log('⚠️ Email not configured. Reset link:');
-                console.log(`📧 http://localhost:3000/user/reset-password/${resetToken}`);
+                console.log(`📧 ${resetLink}`);
             }
 
-            // Always show success message for security (don't reveal if email sent)
-            res.render('forgot-password', { 
-                success: emailSent ? 
-                    'Password reset link has been sent to your email address.' :
-                    'Reset request processed. If email is configured, you will receive a link. Check console for development link.' 
-            });
+            // Show success message with appropriate content
+            if (emailSent) {
+                res.render('forgot-password', { 
+                    success: 'Password reset link has been sent to your email address.' 
+                });
+            } else if (resetLink) {
+                res.render('forgot-password', { 
+                    success: 'Email service not configured. Use this link to reset your password:',
+                    resetLink: resetLink
+                });
+            } else {
+                res.render('forgot-password', { 
+                    success: 'Reset request processed. Please check your email or console for the reset link.' 
+                });
+            }
 
         } catch (error) {
             console.error('Forgot password error:', error);
