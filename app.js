@@ -2,6 +2,7 @@ const dotenv = require('dotenv');
 dotenv.config(); // This must be at the top
 
 const express = require('express');
+const path = require('path'); // Import path module
 const userRouter = require('./routes/user.route');
 const adminRouter = require('./routes/admin.routes');
 const connectToDB = require('./routes/config/db');
@@ -13,6 +14,9 @@ const multer = require('multer');
 connectToDB();
 
 const app = express();
+
+// Set views path for Vercel
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(cookieParser());
 
