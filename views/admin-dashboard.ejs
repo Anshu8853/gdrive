@@ -6,34 +6,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
 </head>
 
-<body class="bg-gray-100 dark:bg-gray-800">
-    <main class="p-4">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Admin Dashboard</h1>
-        <a href="/home" class="text-blue-600 hover:underline dark:text-blue-500 mb-4 inline-block"> &larr; Back to Home</a>
-
-        <% users.forEach(function(user) { %>
-            <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">User: <%= user.username %> (<%= user.email %>)</h2>
-                <% if (user.file && user.file.length > 0) { %>
-                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        <% user.file.forEach(function(publicId) { %>
-                            <div class="relative">
-                                <a href="https://res.cloudinary.com/<%= cloudinaryCloudName %>/image/upload/<%= publicId %>" target="_blank" class="block border rounded-lg p-2 bg-white dark:bg-gray-700 dark:border-gray-600">
-                                    <img src="https://res.cloudinary.com/<%= cloudinaryCloudName %>/image/upload/w_400,h_300,c_fit/<%= publicId %>" alt="<%= publicId %>" class="w-full h-32 object-cover rounded-md mb-2">
-                                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate" title="<%= publicId %>"><%= publicId %></p>
-                                </a>
-                            </div>
-                        <% }); %>
-                    </div>
-                <% } else { %>
-                    <p class="text-gray-500 dark:text-gray-400 mt-2">This user has not uploaded any files.</p>
-                <% } %>
+<body class="bg-gray-100 dark:bg-gray-800 min-h-screen">
+    <main class="p-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Admin Dashboard</h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Manage all users and their uploaded files</p>
             </div>
-            <hr class="my-8 dark:border-gray-600">
-        <% }); %>
+            <div class="space-x-4">
+                <a href="/home" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="ri-home-line mr-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
 
+        <!-- Statistics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Total Users</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white"><%= users.length %></p>
+                    </div>
+                    <i class="ri-user-line text-3xl text-blue-500"></i>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Total Files</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">
+                            <%= users.reduce((total, user) => total + (user.file ? user.file.length : 0), 0) %>
+                        </p>
+                    </div>
+                    <i class="ri-file-line text-3xl text-green-500"></i>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Active Users</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">
+                            <%= users.filter(user => user.file && user.file.length > 0).length %>
+                        </p>
+                    </div>
+                    <i class="ri-user-star-line text-3xl text-purple-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users List -->
+        <div class="space-y-8">
+            <% users.forEach(function(user) { %>
+                <div class="bg-white dark:bg-gray-700 rounded-lg shadow-md p-6">
+                    <!-- User Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                <%= user.username.charAt(0).toUpperCase() %>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                                    <%= user.username %>
+                                    <% if (user.role === 'admin') { %>
+                                        <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">ADMIN</span>
+                                    <% } else { %>
+                                        <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">USER</span>
+                                    <% } %>
+                                </h2>
+                                <p class="text-gray-600 dark:text-gray-400"><%= user.email %></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Files Uploaded</p>
+                            <p class="text-2xl font-bold text-gray-800 dark:text-white">
+                                <%= user.file ? user.file.length : 0 %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- User Files -->
+                    <% if (user.file && user.file.length > 0) { %>
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-4">
+                                <i class="ri-folder-line mr-2"></i>Uploaded Files
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <% user.file.forEach(function(publicId, index) { %>
+                                    <div class="relative group bg-gray-50 dark:bg-gray-600 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                                        <a href="https://res.cloudinary.com/<%= cloudinaryCloudName %>/image/upload/<%= publicId %>" 
+                                           target="_blank" class="block">
+                                            <!-- Image Preview -->
+                                            <div class="aspect-video bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                                <img src="https://res.cloudinary.com/<%= cloudinaryCloudName %>/image/upload/w_400,h_300,c_fit/<%= publicId %>" 
+                                                     alt="File <%= index + 1 %>" 
+                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                     loading="lazy"
+                                                     onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full\'><i class=\'ri-file-line text-4xl text-gray-400\'></i></div>'">
+                                            </div>
+                                            <!-- File Info -->
+                                            <div class="p-3">
+                                                <p class="text-sm font-medium text-gray-800 dark:text-white truncate" title="<%= publicId %>">
+                                                    <%= publicId.split('/').pop() %>
+                                                </p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                    ID: <%= publicId %>
+                                                </p>
+                                            </div>
+                                            <!-- Hover Actions -->
+                                            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div class="bg-black bg-opacity-50 text-white p-2 rounded-full">
+                                                    <i class="ri-external-link-line"></i>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-8">
+                            <i class="ri-file-line text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                            <p class="text-gray-500 dark:text-gray-400">This user has not uploaded any files yet.</p>
+                        </div>
+                    <% } %>
+                </div>
+            <% }); %>
+
+            <% if (users.length === 0) { %>
+                <div class="text-center py-12">
+                    <i class="ri-user-line text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                    <p class="text-xl text-gray-500 dark:text-gray-400">No users found.</p>
+                </div>
+            <% } %>
+        </div>
     </main>
 </body>
 
