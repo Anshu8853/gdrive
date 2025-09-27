@@ -27,7 +27,29 @@
         .info-value { color: #666; font-size: 14px; }
         .files-list { margin-top: 15px; }
         .file-item { background: white; padding: 10px 15px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
-        .file-name { color: #333; font-size: 14px; }
+        .file-name { color: #333; font-size: 14px; flex: 1; }
+        .file-actions { display: flex; gap: 8px; align-items: center; }
+        .view-btn { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 4px 8px; 
+            border-radius: 3px; 
+            text-decoration: none; 
+            font-size: 11px; 
+            cursor: pointer;
+        }
+        .view-btn:hover { background: #0056b3; color: white; }
+        .delete-btn { 
+            background: #dc3545; 
+            color: white; 
+            border: none; 
+            padding: 4px 8px; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            font-size: 11px; 
+        }
+        .delete-btn:hover { background: #c82333; }
         .no-files { color: #999; font-style: italic; text-align: center; padding: 20px; }
         .role-badge { 
             display: inline-block; 
@@ -39,6 +61,8 @@
         }
         .role-admin { background: #dc3545; color: white; }
         .role-user { background: #28a745; color: white; }
+        .success { background: #d4edda; color: #155724; padding: 12px; margin-bottom: 20px; border-radius: 4px; border-left: 4px solid #28a745; }
+        .error { background: #f8d7da; color: #721c24; padding: 12px; margin-bottom: 20px; border-radius: 4px; border-left: 4px solid #dc3545; }
     </style>
 </head>
 <body>
@@ -49,6 +73,18 @@
             </div>
             <a href="/home" class="back-btn"> Back to Home</a>
         </div>
+        
+        <% if (typeof success !== 'undefined' && success) { %>
+        <div class="success">
+            <strong>✓ Success!</strong> <%= success %>
+        </div>
+        <% } %>
+        
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error">
+            <strong>✗ Error!</strong> <%= error %>
+        </div>
+        <% } %>
         
         <h1>System Overview</h1>
         <p class="subtitle">Manage users and monitor file uploads across the platform</p>
@@ -99,7 +135,63 @@
                             <% if (user.files && user.files.length > 0) { %>
                                 <% user.files.forEach(function(file) { %>
                                 <div class="file-item">
-                                    <span class="file-name"> <%= file.filename %></span>
+                                    <div class="file-info">
+                                        <span class="file-name">
+                                            <% 
+                                            let displayName = '';
+                                            if (typeof file === 'string') {
+                                                displayName = file.split('/').pop() || file;
+                                            } else if (file.originalName) {
+                                                displayName = file.originalName;
+                                            } else if (file.filename) {
+                                                displayName = file.filename.split('/').pop() || file.filename;
+                                            } else {
+                                                displayName = 'Uploaded file';
+                                            }
+                                            %>
+                                            🗂️ <%= displayName %>
+                                        </span>
+                                        <% if (file.uploadDate || (typeof file === 'object' && file.uploadDate)) { %>
+                                        <br><small style="color: #999; font-size: 10px;">Uploaded: <%= new Date(file.uploadDate).toLocaleDateString() %></small>
+                                        <% } %>
+                                    </div>
+                                    <div class="file-actions">
+                                        <% 
+                                        let fileUrl = '';
+                                        let fileId = '';
+                                        
+                                        if (typeof file === 'string') {
+                                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file}`;
+                                            fileId = file;
+                                        } else if (file.cloudinaryUrl) {
+                                            fileUrl = file.cloudinaryUrl;
+                                            fileId = file.filename || file.publicId || file.originalName;
+                                        } else if (file.filename) {
+                                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.filename}`;
+                                            fileId = file.filename;
+                                        } else if (file.publicId) {
+                                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.publicId}`;
+                                            fileId = file.publicId;
+                                        }
+                                        
+                                        if (!fileUrl && fileId) {
+                                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${fileId}`;
+                                        }
+                                        %>
+                                        <a href="<%= fileUrl || '#' %>" 
+                                           target="_blank" class="view-btn"
+                                           <% if (!fileUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
+                                            View
+                                        </a>
+                                        <form action="/admin/delete-user-file" method="POST" style="display: inline;">
+                                            <input type="hidden" name="userId" value="<%= user._id %>">
+                                            <input type="hidden" name="filename" value="<%= fileId %>">
+                                            <button type="submit" class="delete-btn" 
+                                                    onclick="return confirm('Are you sure you want to delete this file from <%= user.username %>?')">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                                 <% }); %>
                             <% } else { %>
