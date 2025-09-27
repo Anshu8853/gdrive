@@ -35,6 +35,12 @@ const indexRouter = require('./routes/index.routes');
 
 const app = express();
 
+// Set proper charset and headers
+app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    next();
+});
+
 // Set views path for Vercel
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');

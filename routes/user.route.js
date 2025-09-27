@@ -65,6 +65,7 @@ router.post('/register',
 })
 
 router.get('/login', redirectIfLoggedIn, (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.render('login');
 });
 
