@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-800">
+    <main class="p-4">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Admin Dashboard</h1>
+        <a href="/home" class="text-blue-600 hover:underline dark:text-blue-500 mb-4 inline-block"> &larr; Back to Home</a>
+
+        <% users.forEach(function(user) { %>
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-300">User: <%= user.username %> (<%= user.email %>)</h2>
+                <% if (user.file && user.file.length > 0) { %>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <% user.file.forEach(function(publicId) { %>
+                            <div class="relative">
+                                <a href="https://res.cloudinary.com/<%= cloudinaryCloudName %>/image/upload/<%= publicId %>" target="_blank" class="block border rounded-lg p-2 bg-white dark:bg-gray-700 dark:border-gray-600">
+                                    <img src="https://res.cloudinary.com/<%= cloudinaryCloudName %>/image/upload/w_400,h_300,c_fit/<%= publicId %>" alt="<%= publicId %>" class="w-full h-32 object-cover rounded-md mb-2">
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate" title="<%= publicId %>"><%= publicId %></p>
+                                </a>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-gray-500 dark:text-gray-400 mt-2">This user has not uploaded any files.</p>
+                <% } %>
+            </div>
+            <hr class="my-8 dark:border-gray-600">
+        <% }); %>
+
+    </main>
+</body>
+
+</html>
