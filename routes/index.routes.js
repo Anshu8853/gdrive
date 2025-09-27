@@ -15,8 +15,22 @@ router.get('/home', isAuthenticated, async (req, res, next) => {
             res.clearCookie('token');
             return res.redirect('/user/login');
         }
+        
+        // Handle success message from upload
+        let success = null;
+        if (req.query.upload === 'success') {
+            success = 'File uploaded successfully!';
+        }
+        if (req.query.delete === 'success') {
+            success = 'File deleted successfully!';
+        }
+        
+        // Map file array to files for template consistency
+        user.files = user.file || [];
+        
         res.render('home', { 
             user, 
+            success,
             cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME 
         });
     } catch (error) {

@@ -9,6 +9,11 @@ router.get('/dashboard', isAdmin, async (req, res, next) => {
         // Get all users with their files
         const users = await userModel.find({}).sort({ username: 1 });
         
+        // Map file property to files for template consistency
+        users.forEach(user => {
+            user.files = user.file || [];
+        });
+        
         console.log(`Admin dashboard accessed by user: ${req.user.username}`);
         console.log(`Found ${users.length} users in database`);
         

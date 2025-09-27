@@ -89,7 +89,7 @@
         <form action="/user/upload" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="file"> Choose File to Upload</label>
-                <input type="file" id="file" name="file" required>
+                <input type="file" id="file" name="file" required accept=".jpg,.jpeg,.png,.pdf">
                 <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
                     Supported formats: JPG, PNG, PDF
                 </small>
@@ -105,10 +105,16 @@
                 <% user.files.forEach(function(file) { %>
                 <div class="file-item">
                     <div class="file-name">
-                         <%= file.filename %>
+                         <% if (typeof file === 'string') { %>
+                            <%= file %>
+                        <% } else if (file.filename) { %>
+                            <%= file.originalName || file.filename %>
+                        <% } else { %>
+                            Unknown file
+                        <% } %>
                     </div>
                     <form action="/user/delete-file" method="POST" style="display: inline;">
-                        <input type="hidden" name="filename" value="<%= file.filename %>">
+                        <input type="hidden" name="filename" value="<%= typeof file === 'string' ? file : file.filename %>">
                         <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this file?')">
                              Delete
                         </button>

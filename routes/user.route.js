@@ -106,12 +106,12 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, 
         
         if (!req.file) {
             console.log('No file uploaded');
-            return res.status(400).json({ message: 'No file uploaded' });
+            return res.redirect('/home?error=No file selected');
         }
 
         const user = await userModel.findById(req.user.userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.redirect('/home?error=User not found');
         }
 
         let files = [];
@@ -121,8 +121,17 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, 
             files = [user.file];
         }
 
-        console.log('Adding file public_id:', req.file.filename || req.file.public_id);
-        files.push(req.file.filename || req.file.public_id); // Save the Cloudinary public_id
+        const fileName = req.file.filename || req.file.public_id;
+        console.log('Adding file:', fileName);
+        
+        // Create file object with more details
+        const fileData = {
+            filename: fileName,
+            originalName: req.file.originalname,
+            uploadDate: new Date()
+        };
+        
+        files.push(fileData);
 
         await userModel.updateOne({ _id: user._id }, { $set: { file: files } });
         console.log('File saved to user:', user.username);
@@ -130,7 +139,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, 
         res.redirect('/home?upload=success');
     } catch (error) {
         console.error('Upload error:', error);
-        next(error);
+        res.redirect('/home?error=Upload failed');
     }
 });
 
@@ -138,27 +147,42 @@ router.post('/delete-file', isAuthenticated, async (req, res, next) => {
     try {
         const user = await userModel.findById(req.user.userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.redirect('/home?error=User not found');
         }
 
         const { filename } = req.body; // filename is the public_id
         if (!filename) {
-            return res.status(400).json({ message: 'Filename is required' });
+            return res.redirect('/home?error=Filename is required');
         }
 
-        // Remove file from database
-        await userModel.updateOne({ _id: user._id }, { $pull: { file: filename } });
+        // Remove file from database - handle both old string format and new object format
+        let updatedFiles = [];
+        if (user.file && Array.isArray(user.file)) {
+            updatedFiles = user.file.filter(file => {
+                if (typeof file === 'string') {
+                    return file !== filename;
+                } else if (typeof file === 'object' && file.filename) {
+                    return file.filename !== filename;
+                }
+                return true;
+            });
+        }
+
+        await userModel.updateOne({ _id: user._id }, { $set: { file: updatedFiles } });
 
         // Delete from Cloudinary
         cloudinary.uploader.destroy(filename, (error, result) => {
             if (error) {
-                return next(error);
+                console.error('Cloudinary delete error:', error);
+                return res.redirect('/home?error=Failed to delete file from cloud storage');
             }
+            console.log('File deleted from Cloudinary:', result);
             res.redirect('/home?delete=success');
         });
 
     } catch (error) {
-        next(error);
+        console.error('Delete file error:', error);
+        res.redirect('/home?error=Failed to delete file');
     }
 });
 
