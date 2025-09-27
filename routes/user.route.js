@@ -1,14 +1,4 @@
-// Environment variable check
-const requiredEnv = [
-    'CLOUDINARY_CLOUD_NAME',
-    'CLOUDINARY_API_KEY',
-    'CLOUDINARY_API_SECRET'
-];
-requiredEnv.forEach(v => {
-    if (!process.env[v]) {
-        throw new Error(`FATAL ERROR: Environment variable ${v} is not defined in user.route.js.`);
-    }
-});
+
 
 const express = require('express');
 const router = express.Router();

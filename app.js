@@ -25,7 +25,13 @@ const indexRouter = require('./routes/index.routes');
 const multer = require('multer');
 
 // Connect to MongoDB
-connectToDB();
+(async () => {
+  try {
+    await connectToDB();
+  } catch (error) {
+    console.error("Failed to connect to the database. The application will not start.", error);
+  }
+})();
 
 const app = express();
 
