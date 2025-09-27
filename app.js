@@ -1,8 +1,22 @@
 const dotenv = require('dotenv');
 dotenv.config(); // This must be at the top
 
+// Environment variable check
+const requiredEnv = [
+    'MONGODB_URI',
+    'JWT_SECRET',
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET'
+];
+requiredEnv.forEach(v => {
+    if (!process.env[v]) {
+        throw new Error(`FATAL ERROR: Environment variable ${v} is not defined.`);
+    }
+});
+
 const express = require('express');
-const path = require('path'); // Import path module
+const path = require('path');
 const userRouter = require('./routes/user.route');
 const adminRouter = require('./routes/admin.routes');
 const connectToDB = require('./routes/config/db');
