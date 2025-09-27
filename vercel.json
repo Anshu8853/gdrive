@@ -11,5 +11,12 @@
             "src": "/(.*)",
             "dest": "/app.js"
         }
-    ]
+    ],
+    "env": {
+        "MONGODB_URI": "@mongodb-uri",
+        "JWT_SECRET": "@jwt-secret",
+        "CLOUDINARY_CLOUD_NAME": "@cloudinary-cloud-name",
+        "CLOUDINARY_API_KEY": "@cloudinary-api-key",
+        "CLOUDINARY_API_SECRET": "@cloudinary-api-secret"
+    }
 }
