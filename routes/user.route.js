@@ -315,6 +315,7 @@ router.post('/forgot-password',
             // Try to send OTP email
             let otpSent = false;
             let emailConfigured = validateEmailConfig();
+            let emailError = null;
             
             if (emailConfigured) {
                 try {
@@ -322,6 +323,7 @@ router.post('/forgot-password',
                     console.log('OTP email sent status:', otpSent);
                 } catch (error) {
                     console.error('OTP email sending failed:', error.message);
+                    emailError = error.message;
                     if (error.message.includes('Invalid login') || error.message.includes('BadCredentials')) {
                         console.log('⚠️ Gmail authentication failed - App Password may need regeneration');
                     }
@@ -337,16 +339,23 @@ router.post('/forgot-password',
                     showOtpForm: true,
                     userEmail: email
                 });
-            } else if (emailConfigured) {
-                res.render('forgot-password', { 
-                    success: `Email authentication failed. Your OTP code is: ${otpCode}`,
-                    showOtpForm: true,
-                    userEmail: email,
-                    otpCode: otpCode
-                });
             } else {
+                // Always show OTP on screen as fallback
+                let message = '';
+                if (emailConfigured && emailError) {
+                    if (emailError.includes('Invalid login') || emailError.includes('BadCredentials')) {
+                        message = 'Email authentication failed. Gmail App Password needs updating. Your OTP code is: ' + otpCode;
+                    } else {
+                        message = 'Email sending failed. Your OTP code is: ' + otpCode;
+                    }
+                } else if (!emailConfigured) {
+                    message = 'Email service not configured. Your OTP code is: ' + otpCode;
+                } else {
+                    message = 'Unable to send email. Your OTP code is: ' + otpCode;
+                }
+
                 res.render('forgot-password', { 
-                    success: `Email service not configured. Your OTP code is: ${otpCode}`,
+                    success: message,
                     showOtpForm: true,
                     userEmail: email,
                     otpCode: otpCode
