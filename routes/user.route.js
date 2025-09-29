@@ -319,13 +319,23 @@ router.post('/forgot-password',
             
             if (emailConfigured) {
                 try {
-                    otpSent = await sendOTPEmail(user.email, otpCode, user.username);
+                    // Add timeout wrapper for email sending
+                    console.log('Attempting to send OTP email...');
+                    const emailPromise = sendOTPEmail(user.email, otpCode, user.username);
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Email sending timeout after 20 seconds')), 20000)
+                    );
+                    
+                    otpSent = await Promise.race([emailPromise, timeoutPromise]);
                     console.log('OTP email sent status:', otpSent);
                 } catch (error) {
                     console.error('OTP email sending failed:', error.message);
                     emailError = error.message;
                     if (error.message.includes('Invalid login') || error.message.includes('BadCredentials')) {
                         console.log('⚠️ Gmail authentication failed - App Password may need regeneration');
+                    }
+                    if (error.message.includes('timeout')) {
+                        console.log('⚠️ Email sending timed out - proceeding without email');
                     }
                 }
             } else {
@@ -340,31 +350,31 @@ router.post('/forgot-password',
                     userEmail: email
                 });
             } else {
-                // Always show OTP on screen as fallback
-                let message = '';
-                if (emailConfigured && emailError) {
-                    if (emailError.includes('Invalid login') || emailError.includes('BadCredentials')) {
-                        message = 'Email authentication failed. Gmail App Password needs updating. Your OTP code is: ' + otpCode;
-                    } else {
-                        message = 'Email sending failed. Your OTP code is: ' + otpCode;
-                    }
-                } else if (!emailConfigured) {
-                    // Check if we're on Vercel (production)
+                // Don't proceed to Step 2 if email failed - show error instead
+                let errorMessage = '';
+                if (!emailConfigured) {
                     const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
                     if (isProduction) {
-                        message = 'Email service needs configuration in Vercel dashboard. Your OTP code is: ' + otpCode;
+                        errorMessage = 'Email service needs configuration in Vercel dashboard. Please contact administrator.';
                     } else {
-                        message = 'Email service not configured. Your OTP code is: ' + otpCode;
+                        errorMessage = 'Email service is not configured. Please run: node setup-email.js';
+                    }
+                } else if (emailError) {
+                    if (emailError.includes('Invalid login') || emailError.includes('BadCredentials')) {
+                        errorMessage = 'Gmail authentication failed. App Password may be invalid. Please contact administrator.';
+                    } else if (emailError.includes('timeout')) {
+                        errorMessage = 'Email service is temporarily unavailable. Please try again in a few minutes.';
+                    } else {
+                        errorMessage = 'Failed to send OTP email: ' + emailError + '. Please try again.';
                     }
                 } else {
-                    message = 'Unable to send email. Your OTP code is: ' + otpCode;
+                    errorMessage = 'Unknown error occurred while sending OTP. Please try again.';
                 }
-
+                
                 res.render('forgot-password', { 
-                    success: message,
-                    showOtpForm: true,
-                    userEmail: email,
-                    otpCode: otpCode
+                    error: errorMessage,
+                    success: null,
+                    showOtpForm: false
                 });
             }
 

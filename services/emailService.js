@@ -37,7 +37,11 @@ const createTransporter = () => {
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-      }
+      },
+      // Add timeout configurations
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 5000,    // 5 seconds
+      socketTimeout: 15000      // 15 seconds
     });
   } catch (error) {
     console.error('Error creating email transporter:', error);
@@ -179,11 +183,20 @@ const sendOTPEmail = async (to, otpCode, username) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    // Add timeout to prevent hanging
+    const sendPromise = transporter.sendMail(mailOptions);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Email sending timeout after 15 seconds')), 15000)
+    );
+    
+    await Promise.race([sendPromise, timeoutPromise]);
     console.log(`OTP email sent to ${to}`);
     return true;
   } catch (error) {
     console.error('Error sending OTP email:', error);
+    if (error.message.includes('timeout')) {
+      console.error('Email sending timed out - this might be a Gmail SMTP connection issue');
+    }
     return false;
   }
 };
