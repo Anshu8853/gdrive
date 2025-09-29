@@ -7,6 +7,11 @@ const validateEmailConfig = () => {
   
   if (missing.length > 0) {
     console.log('❌ Email configuration incomplete. Missing/placeholder values for:', missing);
+    console.log('🔍 Environment check:');
+    required.forEach(key => {
+      const value = process.env[key];
+      console.log(`  ${key}: ${value ? (value.length > 10 ? value.substring(0, 5) + '***' : 'short_value') : 'undefined'}`);
+    });
     return false;
   }
   

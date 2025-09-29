@@ -349,7 +349,13 @@ router.post('/forgot-password',
                         message = 'Email sending failed. Your OTP code is: ' + otpCode;
                     }
                 } else if (!emailConfigured) {
-                    message = 'Email service not configured. Your OTP code is: ' + otpCode;
+                    // Check if we're on Vercel (production)
+                    const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
+                    if (isProduction) {
+                        message = 'Email service needs configuration in Vercel dashboard. Your OTP code is: ' + otpCode;
+                    } else {
+                        message = 'Email service not configured. Your OTP code is: ' + otpCode;
+                    }
                 } else {
                     message = 'Unable to send email. Your OTP code is: ' + otpCode;
                 }
