@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 
 // Validate email configuration
 const validateEmailConfig = () => {
-  const required = ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
+  const required = ['EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
   const missing = required.filter(key => !process.env[key] || process.env[key] === 'your-email@gmail.com' || process.env[key] === 'your-16-digit-app-password');
   
   if (missing.length > 0) {

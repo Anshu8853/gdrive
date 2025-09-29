@@ -321,7 +321,10 @@ router.post('/forgot-password',
                     otpSent = await sendOTPEmail(user.email, otpCode, user.username);
                     console.log('OTP email sent status:', otpSent);
                 } catch (error) {
-                    console.error('OTP email sending failed:', error);
+                    console.error('OTP email sending failed:', error.message);
+                    if (error.message.includes('Invalid login') || error.message.includes('BadCredentials')) {
+                        console.log('⚠️ Gmail authentication failed - App Password may need regeneration');
+                    }
                 }
             } else {
                 console.log('⚠️ Email not configured properly. Please run: node setup-email.js');
@@ -336,8 +339,10 @@ router.post('/forgot-password',
                 });
             } else if (emailConfigured) {
                 res.render('forgot-password', { 
-                    error: 'Failed to send OTP email. Please try again or contact support.',
-                    userEmail: email
+                    success: `Email authentication failed. Your OTP code is: ${otpCode}`,
+                    showOtpForm: true,
+                    userEmail: email,
+                    otpCode: otpCode
                 });
             } else {
                 res.render('forgot-password', { 
