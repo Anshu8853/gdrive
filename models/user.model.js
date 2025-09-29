@@ -15,7 +15,11 @@ const userSchema = new mongoose.Schema({
     file: { type: [fileSchema], default: [] }, // Updated to support file objects
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date }
+    resetPasswordExpires: { type: Date },
+    // OTP fields for forgot password
+    otpCode: { type: String },
+    otpExpires: { type: Date },
+    otpAttempts: { type: Number, default: 0 }
 });
 
 const User = mongoose.model('user', userSchema);

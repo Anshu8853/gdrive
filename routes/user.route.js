@@ -11,7 +11,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { redirectIfLoggedIn, isAuthenticated } = require('./middleware/auth');
-const { sendPasswordResetEmail } = require('../services/emailService');
+const { sendPasswordResetEmail, sendOTPEmail, validateEmailConfig } = require('../services/emailService');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -248,6 +248,9 @@ router.post('/delete-file', isAuthenticated, async (req, res, next) => {
 
 // GET - Show forgot password form
 router.get('/forgot-password', redirectIfLoggedIn, (req, res) => {
+    console.log('=== FORGOT PASSWORD GET ROUTE ACCESSED ===');
+    console.log('Query params:', req.query);
+    
     // Handle success/error messages from query params
     let success = null;
     let error = null;
@@ -259,23 +262,28 @@ router.get('/forgot-password', redirectIfLoggedIn, (req, res) => {
         error = req.query.error;
     }
     
+    console.log('Rendering forgot-password with:', { success, error });
     res.render('forgot-password', { success, error });
 });
 
-// POST - Process forgot password request
+// POST - Process forgot password request (Send OTP)
 router.post('/forgot-password', 
     body('email').trim().isEmail(),
     async (req, res, next) => {
+        console.log('=== FORGOT PASSWORD POST ROUTE ACCESSED ===');
+        console.log('Request body:', req.body);
+        
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
+                console.log('Validation errors:', errors.array());
                 return res.render('forgot-password', { 
                     error: 'Please enter a valid email address' 
                 });
             }
 
             const { email } = req.body;
-            console.log(`Forgot password request for email: ${email}`);
+            console.log(`OTP request for email: ${email}`);
             
             const user = await userModel.findOne({ email: email.toLowerCase() });
             console.log(`User found:`, user ? `Yes (${user.username})` : 'No');
@@ -284,63 +292,177 @@ router.post('/forgot-password',
             if (!user) {
                 console.log('User not found - showing generic success message');
                 return res.render('forgot-password', { 
-                    success: 'If an account with this email exists, you will receive a password reset link.' 
+                    success: 'If an account with this email exists, you will receive an OTP code.' 
                 });
             }
 
-            // Generate reset token
-            const resetToken = crypto.randomBytes(32).toString('hex');
-            const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+            // Generate 6-digit OTP
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = Date.now() + 600000; // 10 minutes from now
 
-            // Save reset token to user
+            console.log(`Generated OTP for ${user.username}: ${otpCode}`);
+
+            // Save OTP to user
             await userModel.updateOne(
                 { _id: user._id },
                 {
-                    resetPasswordToken: resetToken,
-                    resetPasswordExpires: resetTokenExpiry
+                    otpCode: otpCode,
+                    otpExpires: otpExpiry,
+                    otpAttempts: 0
                 }
             );
 
-            console.log('Reset token generated for user:', user.email);
-            console.log('Reset token:', resetToken);
-
-            // Try to send email (if email service is configured)
-            let emailSent = false;
-            let resetLink = null;
+            // Try to send OTP email
+            let otpSent = false;
+            let emailConfigured = validateEmailConfig();
             
-            if (process.env.EMAIL_USER && process.env.EMAIL_PASS && 
-                process.env.EMAIL_USER !== 'your-email@gmail.com') {
+            if (emailConfigured) {
                 try {
-                    emailSent = await sendPasswordResetEmail(user.email, resetToken, user.username);
-                    console.log('Email sent status:', emailSent);
+                    otpSent = await sendOTPEmail(user.email, otpCode, user.username);
+                    console.log('OTP email sent status:', otpSent);
                 } catch (error) {
-                    console.error('Email sending failed:', error);
+                    console.error('OTP email sending failed:', error);
                 }
             } else {
-                // Email not configured - provide link directly to user
-                resetLink = `http://localhost:3000/user/reset-password/${resetToken}`;
-                console.log('⚠️ Email not configured. Reset link:');
-                console.log(`📧 ${resetLink}`);
+                console.log('⚠️ Email not configured properly. Please run: node setup-email.js');
             }
 
-            // Show success message with appropriate content
-            if (emailSent) {
+            // Show appropriate success message
+            if (otpSent) {
                 res.render('forgot-password', { 
-                    success: 'Password reset link has been sent to your email address.' 
+                    success: 'OTP has been sent to your email address. Please check your inbox and spam folder.',
+                    showOtpForm: true,
+                    userEmail: email
                 });
-            } else if (resetLink) {
+            } else if (emailConfigured) {
                 res.render('forgot-password', { 
-                    success: 'Email service not configured. Use this link to reset your password:',
-                    resetLink: resetLink
+                    error: 'Failed to send OTP email. Please try again or contact support.',
+                    userEmail: email
                 });
             } else {
                 res.render('forgot-password', { 
-                    success: 'Reset request processed. Please check your email or console for the reset link.' 
+                    success: `Email service not configured. Your OTP code is: ${otpCode}`,
+                    showOtpForm: true,
+                    userEmail: email,
+                    otpCode: otpCode
                 });
             }
 
         } catch (error) {
-            console.error('Forgot password error:', error);
+            console.error('Forgot password OTP error:', error);
+            next(error);
+        }
+    }
+);
+
+// POST - Verify OTP and reset password
+router.post('/verify-otp',
+    body('email').trim().isEmail(),
+    body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    body('confirmPassword').custom((value, { req }) => {
+        if (value !== req.body.newPassword) {
+            throw new Error('Passwords do not match');
+        }
+        return true;
+    }),
+    async (req, res, next) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                const errorMsg = errors.array()[0].msg;
+                return res.render('forgot-password', {
+                    error: errorMsg,
+                    showOtpForm: true,
+                    userEmail: req.body.email
+                });
+            }
+
+            const { email, otp, newPassword } = req.body;
+            console.log(`OTP verification for email: ${email}, OTP: ${otp}`);
+
+            const user = await userModel.findOne({ email: email.toLowerCase() });
+
+            if (!user) {
+                console.log('User not found during OTP verification');
+                return res.render('forgot-password', {
+                    error: 'Invalid request',
+                    showOtpForm: true,
+                    userEmail: email
+                });
+            }
+
+            // Check if OTP exists and hasn't expired
+            if (!user.otpCode || !user.otpExpires) {
+                console.log('No OTP found for user');
+                return res.render('forgot-password', {
+                    error: 'No OTP request found. Please request a new OTP.',
+                    userEmail: email
+                });
+            }
+
+            // Check if OTP has expired
+            if (Date.now() > user.otpExpires) {
+                console.log('OTP expired');
+                await userModel.updateOne(
+                    { _id: user._id },
+                    { $unset: { otpCode: 1, otpExpires: 1, otpAttempts: 1 } }
+                );
+                return res.render('forgot-password', {
+                    error: 'OTP has expired. Please request a new one.',
+                    userEmail: email
+                });
+            }
+
+            // Check attempt limit
+            if (user.otpAttempts >= 5) {
+                console.log('Too many OTP attempts');
+                await userModel.updateOne(
+                    { _id: user._id },
+                    { $unset: { otpCode: 1, otpExpires: 1, otpAttempts: 1 } }
+                );
+                return res.render('forgot-password', {
+                    error: 'Too many incorrect attempts. Please request a new OTP.',
+                    userEmail: email
+                });
+            }
+
+            // Verify OTP
+            if (user.otpCode !== otp) {
+                console.log(`OTP mismatch. Expected: ${user.otpCode}, Got: ${otp}`);
+                await userModel.updateOne(
+                    { _id: user._id },
+                    { $inc: { otpAttempts: 1 } }
+                );
+                return res.render('forgot-password', {
+                    error: `Incorrect OTP. ${5 - (user.otpAttempts + 1)} attempts remaining.`,
+                    showOtpForm: true,
+                    userEmail: email
+                });
+            }
+
+            console.log('OTP verified successfully - resetting password');
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Update password and clear OTP data
+            await userModel.updateOne(
+                { _id: user._id },
+                {
+                    password: hashedPassword,
+                    $unset: { otpCode: 1, otpExpires: 1, otpAttempts: 1 }
+                }
+            );
+
+            console.log('Password reset successfully for user:', user.email);
+
+            res.render('forgot-password', {
+                success: 'Password has been reset successfully. You can now login with your new password.'
+            });
+
+        } catch (error) {
+            console.error('OTP verification error:', error);
             next(error);
         }
     }

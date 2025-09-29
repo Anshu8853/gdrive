@@ -1,18 +1,34 @@
 const nodemailer = require('nodemailer');
 
+// Validate email configuration
+const validateEmailConfig = () => {
+  const required = ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
+  const missing = required.filter(key => !process.env[key] || process.env[key] === 'your-email@gmail.com' || process.env[key] === 'your-16-digit-app-password');
+  
+  if (missing.length > 0) {
+    console.log('❌ Email configuration incomplete. Missing/placeholder values for:', missing);
+    return false;
+  }
+  
+  console.log('✅ Email configuration is complete');
+  return true;
+};
+
 // Create transporter
 const createTransporter = () => {
   try {
+    if (!validateEmailConfig()) {
+      throw new Error('Email configuration is incomplete');
+    }
+    
     console.log('Creating email transporter with config:', {
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
       user: process.env.EMAIL_USER ? process.env.EMAIL_USER.substring(0, 3) + '***' : 'not set'
     });
     
-    return nodemailer.createTransporter({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT) || 587,
-      secure: false, // true for 465, false for other ports
+    return nodemailer.createTransport({
+      service: 'gmail',  // Use Gmail service instead of manual SMTP
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -21,6 +37,23 @@ const createTransporter = () => {
   } catch (error) {
     console.error('Error creating email transporter:', error);
     throw error;
+  }
+};
+
+// Test email connection
+const testEmailConnection = async () => {
+  try {
+    if (!validateEmailConfig()) {
+      return { success: false, error: 'Email configuration incomplete' };
+    }
+    
+    const transporter = createTransporter();
+    await transporter.verify();
+    console.log('✅ Email connection test successful');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Email connection test failed:', error.message);
+    return { success: false, error: error.message };
   }
 };
 
@@ -90,6 +123,69 @@ const sendPasswordResetEmail = async (to, resetToken, username) => {
   }
 };
 
+// Send OTP email for password reset
+const sendOTPEmail = async (to, otpCode, username) => {
+  const transporter = createTransporter();
+  
+  const mailOptions = {
+    from: `"GDrive Support" <${process.env.EMAIL_FROM}>`,
+    to: to,
+    subject: 'Password Reset OTP - GDrive',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #007bff; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">🔐 Password Reset OTP</h1>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f8fafc;">
+          <h2 style="color: #007bff;">Hello ${username}!</h2>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #374151;">
+            You requested to reset your password for your GDrive account. Use the OTP code below to reset your password:
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="background-color: #e3f2fd; border: 2px dashed #007bff; padding: 20px; border-radius: 8px; display: inline-block;">
+              <h1 style="color: #007bff; font-size: 32px; margin: 0; letter-spacing: 8px; font-family: monospace;">
+                ${otpCode}
+              </h1>
+            </div>
+          </div>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #374151;">
+            Enter this 6-digit code on the password reset page to continue.
+          </p>
+          
+          <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+            ⏰ This OTP will expire in 10 minutes for security reasons.
+            <br>
+            🔐 If you didn't request this reset, please ignore this email.
+            <br>
+            🚫 Do not share this code with anyone.
+          </p>
+        </div>
+        
+        <div style="background-color: #374151; color: #9ca3af; padding: 20px; text-align: center; font-size: 12px;">
+          <p style="margin: 0;">© 2025 GDrive. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">This is an automated email, please do not reply.</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`OTP email sent to ${to}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending OTP email:', error);
+    return false;
+  }
+};
+
 module.exports = {
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendOTPEmail,
+  testEmailConnection,
+  validateEmailConfig
 };

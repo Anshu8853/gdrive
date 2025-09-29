@@ -53,6 +53,10 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Note: Static uploads folder not needed since using Cloudinary
+
+// Serve test files (for development)
+app.use('/test', express.static(__dirname));
+
 app.use('/', indexRouter);
 app.use('/user', userRouter);
 app.use('/admin', adminRouter);
