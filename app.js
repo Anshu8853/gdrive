@@ -17,6 +17,7 @@ requiredEnv.forEach(v => {
 
 const express = require('express');
 const path = require('path');
+const session = require('express-session');
 const userRouter = require('./routes/user.route');
 const adminRouter = require('./routes/admin.routes');
 const connectToDB = require('./routes/config/db');
@@ -46,6 +47,17 @@ app.use((req, res, next) => {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(cookieParser());
+
+// Session configuration for OTP storage
+app.use(session({
+    secret: process.env.JWT_SECRET || 'fallback-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // Set to true in production with HTTPS
+        maxAge: 15 * 60 * 1000 // 15 minutes
+    }
+}));
 
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);

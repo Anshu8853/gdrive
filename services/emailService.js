@@ -139,25 +139,43 @@ const sendPasswordResetEmail = async (to, resetToken, username) => {
   }
 };
 
-// Send OTP email for password reset
-const sendOTPEmail = async (to, otpCode, username) => {
+// Send OTP email for password reset or registration
+const sendOTPEmail = async (to, otpCode, type = 'password-reset', username = null) => {
   const transporter = createTransporter();
+  
+  // Different content based on type
+  const isRegistration = type === 'registration';
+  const subject = isRegistration ? 'Email Verification OTP - GDrive' : 'Password Reset OTP - GDrive';
+  const title = isRegistration ? '📧 Email Verification' : '🔐 Password Reset OTP';
+  const greeting = username ? `Hello ${username}!` : 'Hello!';
+  
+  const message = isRegistration 
+    ? 'Welcome to GDrive! To complete your registration, please verify your email address using the OTP code below:'
+    : 'You requested to reset your password for your GDrive account. Use the OTP code below to reset your password:';
+    
+  const instruction = isRegistration
+    ? 'Enter this 6-digit code on the registration page to verify your email and complete account creation.'
+    : 'Enter this 6-digit code on the password reset page to continue.';
+    
+  const securityNote = isRegistration
+    ? '⏰ This OTP will expire in 15 minutes for security reasons.<br>🔐 If you didn\'t request this registration, please ignore this email.<br>🚫 Do not share this code with anyone.'
+    : '⏰ This OTP will expire in 15 minutes for security reasons.<br>🔐 If you didn\'t request this reset, please ignore this email.<br>🚫 Do not share this code with anyone.';
   
   const mailOptions = {
     from: `"GDrive Support" <${process.env.EMAIL_FROM}>`,
     to: to,
-    subject: 'Password Reset OTP - GDrive',
+    subject: subject,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #007bff; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">🔐 Password Reset OTP</h1>
+          <h1 style="margin: 0;">${title}</h1>
         </div>
         
         <div style="padding: 30px; background-color: #f8fafc;">
-          <h2 style="color: #007bff;">Hello ${username}!</h2>
+          <h2 style="color: #007bff;">${greeting}</h2>
           
           <p style="font-size: 16px; line-height: 1.6; color: #374151;">
-            You requested to reset your password for your GDrive account. Use the OTP code below to reset your password:
+            ${message}
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
@@ -169,15 +187,11 @@ const sendOTPEmail = async (to, otpCode, username) => {
           </div>
           
           <p style="font-size: 16px; line-height: 1.6; color: #374151;">
-            Enter this 6-digit code on the password reset page to continue.
+            ${instruction}
           </p>
           
           <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-            ⏰ This OTP will expire in 10 minutes for security reasons.
-            <br>
-            🔐 If you didn't request this reset, please ignore this email.
-            <br>
-            🚫 Do not share this code with anyone.
+            ${securityNote}
           </p>
         </div>
         

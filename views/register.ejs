@@ -12,23 +12,55 @@
         input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; background: #007bff; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0056b3; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #545b62; }
         .error { background: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
         .success { background: #d1edff; color: #0c5460; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
         .links { text-align: center; margin-top: 20px; }
         .links a { color: #007bff; text-decoration: none; }
         .description { text-align: center; color: #666; margin-bottom: 25px; font-size: 14px; }
         .icon { text-align: center; font-size: 48px; margin-bottom: 15px; }
+        .step-indicator { text-align: center; margin-bottom: 20px; }
+        .step { display: inline-block; width: 30px; height: 30px; border-radius: 50%; background: #ddd; color: white; line-height: 30px; margin: 0 10px; }
+        .step.active { background: #007bff; }
+        .step.completed { background: #28a745; }
+        .otp-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
+        .otp-input { text-align: center; font-size: 18px; letter-spacing: 5px; font-family: monospace; }
+        .email-display { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon"></div>
-        <h1>Create Account</h1>
-        <p class="description">Join GDrive today! Create your account to start storing and sharing files securely.</p>
+        <div class="icon">📧</div>
+        
+        <% if (typeof step !== 'undefined' && step === 2) { %>
+            <!-- Step 2: OTP Verification -->
+            <div class="step-indicator">
+                <span class="step completed">1</span>
+                <span class="step active">2</span>
+            </div>
+            
+            <h1>Verify Your Email</h1>
+            <p class="description">Enter the 6-digit OTP code sent to your email to complete registration.</p>
+            
+            <% if (typeof email !== 'undefined' && email) { %>
+                <div class="email-display">📧 <%= email %></div>
+            <% } %>
+            
+        <% } else { %>
+            <!-- Step 1: Email Verification -->
+            <div class="step-indicator">
+                <span class="step active">1</span>
+                <span class="step">2</span>
+            </div>
+            
+            <h1>Create Account</h1>
+            <p class="description">Step 1: Enter your email address to get started. We'll send you a verification code.</p>
+        <% } %>
         
         <% if (typeof error !== 'undefined' && error) { %>
         <div class="error">
-            <strong>Registration failed:</strong> <%= error %>
+            <strong>Error:</strong> <%= error %>
         </div>
         <% } %>
         
@@ -38,16 +70,71 @@
         </div>
         <% } %>
         
-        <form action="/user/register" method="POST">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Choose a username" required>
+        <% if (typeof step !== 'undefined' && step === 2) { %>
+            <!-- Step 2: Complete Registration with OTP -->
+            <div class="otp-info">
+                📧 Check your email for a 6-digit verification code. The code will expire in 15 minutes.
             </div>
             
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            <form action="/user/register" method="POST">
+                <input type="hidden" name="email" value="<%= typeof email !== 'undefined' ? email : '' %>">
+                
+                <div class="form-group">
+                    <label for="otp">Verification Code</label>
+                    <input type="text" id="otp" name="otp" class="otp-input" placeholder="000000" maxlength="6" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit">Complete Registration</button>
+            </form>
+            
+            <div class="links">
+                <a href="/user/register">← Start Over</a> | 
+                <a href="/user/login">Already have an account? Login</a>
             </div>
+            
+        <% } else { %>
+            <!-- Step 1: Email Verification -->
+            <form action="/user/register/send-otp" method="POST">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                
+                <button type="submit">Send Verification Code</button>
+            </form>
+            
+            <div class="links">
+                <a href="/user/login">Already have an account? Login</a>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Auto-format OTP input
+        const otpInput = document.getElementById('otp');
+        if (otpInput) {
+            otpInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value.length === 6) {
+                    this.style.background = '#e8f5e8';
+                } else {
+                    this.style.background = '';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
             
             <div class="form-group">
                 <label for="password">Password</label>

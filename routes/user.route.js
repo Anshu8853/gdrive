@@ -51,39 +51,227 @@ const upload = multer({
     }
 });
 
-router.get('/register', redirectIfLoggedIn, (req, res) => { 
-    res.render('register');
-});
-
-router.post('/register', 
-   body('email').trim().isEmail().isLength({ min: 13 }),
-   body('password').trim().isLength({ min: 5 }),
-    body('username').trim().isLength({ min: 3 }), 
-      async (req, res, next) => {
+router.get('/register', redirectIfLoggedIn, (req, res) => {
+    res.render('register', { step: 1, success: null, error: null });
+});// Step 1: Send OTP for registration
+router.post('/register/send-otp',
+    body('email').trim().isEmail().isLength({ min: 5 }),
+    async (req, res) => {
+        console.log('=== REGISTRATION OTP REQUEST ===');
+        console.log('Request body:', req.body);
+        
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-               return res.render('register', { 
-                   error: 'Please check your input: ' + errors.array().map(e => e.msg).join(', ')
-               });
+                return res.render('register', {
+                    step: 1,
+                    error: 'Please enter a valid email address',
+                    success: null
+                });
             }
-               const { username, email, password } = req.body;
-               const hashPassword = await bcrypt.hash(password, 10);
-               const newUser = await userModel.create({ username, email ,password: hashPassword});
+
+            const { email } = req.body;
+            console.log('Registration OTP request for email:', email);
+
+            // Check if email already exists
+            const existingUser = await userModel.findOne({ email });
+            if (existingUser) {
+                console.log('Email already registered:', email);
+                return res.render('register', {
+                    step: 1,
+                    error: 'Email already registered. Please use a different email or login.',
+                    success: null
+                });
+            }
+
+            // Validate email configuration
+            if (!validateEmailConfig()) {
+                console.log('❌ Email configuration invalid');
+                return res.render('register', {
+                    step: 1,
+                    error: 'Email service needs configuration. Please contact administrator.',
+                    success: null
+                });
+            }
+
+            // Generate 6-digit OTP
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
             
-               console.log('New user created:', newUser.username);
-               res.clearCookie('token');
-               
-               // Redirect to login with success message instead of JSON response
-               res.redirect('/user/login?success=Account created successfully! Please login.');
-        } catch (error) {
-            console.error('Registration error:', error);
-            if (error.code === 11000) {
-                return res.render('register', { error: 'Username or email already exists' });
+            console.log('Generated registration OTP:', otpCode);
+
+            // Store OTP in session for verification
+            req.session = req.session || {};
+            req.session.registrationOTP = {
+                email: email,
+                otp: otpCode,
+                expires: otpExpires,
+                attempts: 0
+            };
+
+            // Send OTP email
+            console.log('Attempting to send registration OTP email...');
+            const emailSent = await sendOTPEmail(email, otpCode, 'registration');
+            console.log('Registration OTP email sent status:', emailSent);
+
+            if (emailSent) {
+                res.render('register', {
+                    step: 2,
+                    email: email,
+                    success: `OTP sent to ${email}. Please check your email and enter the 6-digit code.`,
+                    error: null
+                });
+            } else {
+                res.render('register', {
+                    step: 1,
+                    error: 'Failed to send OTP email. Please try again.',
+                    success: null
+                });
             }
-            return res.render('register', { error: 'Registration failed. Please try again.' });
+
+        } catch (error) {
+            console.error('Registration OTP error:', error);
+            res.render('register', {
+                step: 1,
+                error: 'Failed to send OTP. Please try again.',
+                success: null
+            });
         }
-})
+    }
+);
+
+// Step 2: Verify OTP and complete registration
+router.post('/register',
+    body('email').trim().isEmail().isLength({ min: 5 }),
+    body('otp').trim().isLength({ min: 6, max: 6 }),
+    body('username').trim().isLength({ min: 3 }),
+    body('password').trim().isLength({ min: 5 }),
+    async (req, res) => {
+        console.log('=== REGISTRATION COMPLETION ===');
+        console.log('Request body:', req.body);
+        
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.render('register', {
+                    step: 2,
+                    email: req.body.email,
+                    error: 'Please check your input: ' + errors.array().map(e => e.msg).join(', '),
+                    success: null
+                });
+            }
+
+            const { email, otp, username, password } = req.body;
+            
+            // Check session for OTP
+            if (!req.session || !req.session.registrationOTP) {
+                return res.render('register', {
+                    step: 1,
+                    error: 'Registration session expired. Please start again.',
+                    success: null
+                });
+            }
+
+            const otpData = req.session.registrationOTP;
+
+            // Verify email matches
+            if (otpData.email !== email) {
+                return res.render('register', {
+                    step: 1,
+                    error: 'Email mismatch. Please start again.',
+                    success: null
+                });
+            }
+
+            // Check if OTP expired
+            if (new Date() > new Date(otpData.expires)) {
+                delete req.session.registrationOTP;
+                return res.render('register', {
+                    step: 1,
+                    error: 'OTP expired. Please request a new one.',
+                    success: null
+                });
+            }
+
+            // Check attempt limits
+            if (otpData.attempts >= 3) {
+                delete req.session.registrationOTP;
+                return res.render('register', {
+                    step: 1,
+                    error: 'Too many failed attempts. Please start again.',
+                    success: null
+                });
+            }
+
+            // Verify OTP
+            if (otpData.otp !== otp) {
+                otpData.attempts++;
+                const remainingAttempts = 3 - otpData.attempts;
+                return res.render('register', {
+                    step: 2,
+                    email: email,
+                    error: `Invalid OTP. ${remainingAttempts} attempts remaining.`,
+                    success: null
+                });
+            }
+
+            // Check if username already exists
+            const existingUsername = await userModel.findOne({ username });
+            if (existingUsername) {
+                return res.render('register', {
+                    step: 2,
+                    email: email,
+                    error: 'Username already exists. Please choose a different username.',
+                    success: null
+                });
+            }
+
+            // Check if email already exists (double check)
+            const existingEmail = await userModel.findOne({ email });
+            if (existingEmail) {
+                return res.render('register', {
+                    step: 1,
+                    error: 'Email already registered. Please use a different email.',
+                    success: null
+                });
+            }
+
+            // Create user account
+            const hashPassword = await bcrypt.hash(password, 10);
+            const newUser = await userModel.create({
+                username,
+                email,
+                password: hashPassword
+            });
+
+            console.log('New user created with OTP verification:', newUser.username);
+            
+            // Clear session data
+            delete req.session.registrationOTP;
+            res.clearCookie('token');
+
+            // Redirect to login with success message
+            res.redirect('/user/login?success=Account created successfully! Your email has been verified. Please login.');
+
+        } catch (error) {
+            console.error('Registration completion error:', error);
+            if (error.code === 11000) {
+                return res.render('register', {
+                    step: 2,
+                    email: req.body.email,
+                    error: 'Username or email already exists',
+                    success: null
+                });
+            }
+            return res.render('register', {
+                step: 2,
+                email: req.body.email,
+                error: 'Registration failed. Please try again.',
+                success: null
+            });
+        }
+    }
+);
 
 router.get('/login', redirectIfLoggedIn, (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');

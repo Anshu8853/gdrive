@@ -1,6 +1,9 @@
 // Vercel Environment Variables Checker
 // This script helps verify which environment variables are missing in Vercel
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 const requiredEnvVars = [
     'MONGODB_URI',
     'JWT_SECRET', 
