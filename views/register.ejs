@@ -303,6 +303,87 @@
         .popup-modal {
             animation: fadeInScale 0.3s ease-out;
         }
+        
+        /* Password Requirements Styles */
+        .password-requirements {
+            margin-top: 10px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            font-size: 13px;
+        }
+        .requirements-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .requirement {
+            margin-bottom: 4px;
+            color: #6c757d;
+            transition: color 0.3s ease;
+            padding: 2px 0;
+        }
+        .requirement.valid {
+            color: #28a745;
+            font-weight: 500;
+        }
+        .requirement.valid::before {
+            content: '✓ ';
+            color: #28a745;
+            font-weight: bold;
+        }
+        .requirement.invalid {
+            color: #dc3545;
+        }
+        .requirement.invalid::before {
+            content: '✗ ';
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .password-strength {
+            margin-top: 10px;
+        }
+        .strength-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+        }
+        .strength-fill.weak {
+            width: 25%;
+            background: linear-gradient(90deg, #dc3545, #e74c3c);
+        }
+        .strength-fill.fair {
+            width: 50%;
+            background: linear-gradient(90deg, #ffc107, #ff9800);
+        }
+        .strength-fill.good {
+            width: 75%;
+            background: linear-gradient(90deg, #17a2b8, #007bff);
+        }
+        .strength-fill.strong {
+            width: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+        }
+        .strength-text {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .strength-text.weak { color: #dc3545; }
+        .strength-text.fair { color: #ffc107; }
+        .strength-text.good { color: #17a2b8; }
+        .strength-text.strong { color: #28a745; }
     </style>
 </head>
 <body>
@@ -356,7 +437,22 @@
                 
                 <div class="form-group">
                     <label for="password">🔒 Password</label>
-                    <input type="password" id="password" name="password" placeholder="Create a strong password" required>
+                    <input type="password" id="password" name="password" placeholder="Create a strong password" required 
+                           minlength="8" maxlength="16">
+                    <div class="password-requirements">
+                        <div class="requirements-title">Password Requirements:</div>
+                        <div class="requirement" id="req-length">• 8-16 characters</div>
+                        <div class="requirement" id="req-uppercase">• At least one uppercase letter (A-Z)</div>
+                        <div class="requirement" id="req-lowercase">• At least one lowercase letter (a-z)</div>
+                        <div class="requirement" id="req-number">• At least one number (0-9)</div>
+                        <div class="requirement" id="req-special">• At least one special character (@$!%*?&)</div>
+                    </div>
+                    <div class="password-strength" id="password-strength" style="display: none;">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strength-fill"></div>
+                        </div>
+                        <div class="strength-text" id="strength-text"></div>
+                    </div>
                 </div>
                 
                 <button type="submit">🚀 Complete Registration</button>
@@ -587,6 +683,74 @@
                 container.style.opacity = '1';
                 container.style.transform = 'translateY(0)';
             }, 100);
+        });
+
+        // Password validation and strength meter
+        function validatePassword() {
+            const password = document.getElementById('password').value;
+            const requirements = {
+                length: password.length >= 8 && password.length <= 16,
+                special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            // Update requirement checkmarks
+            updateRequirement('req-length', requirements.length);
+            updateRequirement('req-special', requirements.special);
+            updateRequirement('req-uppercase', requirements.uppercase);
+            updateRequirement('req-lowercase', requirements.lowercase);
+            updateRequirement('req-number', requirements.number);
+
+            // Calculate strength
+            const score = Object.values(requirements).filter(Boolean).length;
+            updateStrengthMeter(score);
+
+            return requirements.length && requirements.special;
+        }
+
+        function updateRequirement(id, isValid) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.className = 'requirement ' + (isValid ? 'valid' : 'invalid');
+            }
+        }
+
+        function updateStrengthMeter(score) {
+            const strengthFill = document.querySelector('.strength-fill');
+            const strengthText = document.querySelector('.strength-text');
+            
+            if (!strengthFill || !strengthText) return;
+
+            strengthFill.className = 'strength-fill';
+            strengthText.className = 'strength-text';
+
+            if (score <= 1) {
+                strengthFill.classList.add('weak');
+                strengthText.classList.add('weak');
+                strengthText.textContent = 'Weak';
+            } else if (score <= 2) {
+                strengthFill.classList.add('fair');
+                strengthText.classList.add('fair');
+                strengthText.textContent = 'Fair';
+            } else if (score <= 4) {
+                strengthFill.classList.add('good');
+                strengthText.classList.add('good');
+                strengthText.textContent = 'Good';
+            } else {
+                strengthFill.classList.add('strong');
+                strengthText.classList.add('strong');
+                strengthText.textContent = 'Strong';
+            }
+        }
+
+        // Attach password validation to input event
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) {
+                passwordInput.addEventListener('input', validatePassword);
+            }
         });
     </script>
 </body>

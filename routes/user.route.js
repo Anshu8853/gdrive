@@ -146,7 +146,11 @@ router.post('/register',
     body('email').trim().isEmail().isLength({ min: 5 }),
     body('otp').trim().isLength({ min: 6, max: 6 }),
     body('username').trim().isLength({ min: 3 }),
-    body('password').trim().isLength({ min: 5 }),
+    body('password')
+        .trim()
+        .isLength({ min: 8, max: 16 }).withMessage('Password must be between 8-16 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/)
+        .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'),
     async (req, res) => {
         console.log('=== REGISTRATION COMPLETION ===');
         console.log('Request body:', req.body);
