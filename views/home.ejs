@@ -784,12 +784,15 @@
                         if (typeof file === 'string') {
                             // Old format - file is just a string (public_id)
                             fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/raw/upload/${file}`;
-                            fileId = file;
+                            // Remove folder prefix from fileId if present
+                            fileId = file.includes('/') ? file.split('/').pop() : file;
                             fileName = file;
                         } else if (file.cloudinaryUrl) {
                             // New format - file has cloudinaryUrl
                             fileUrl = file.cloudinaryUrl;
-                            fileId = file.filename || file.publicId || file.originalName;
+                            const rawFileId = file.filename || file.publicId || file.originalName;
+                            // Remove folder prefix from fileId if present
+                            fileId = rawFileId.includes('/') ? rawFileId.split('/').pop() : rawFileId;
                             fileName = file.originalName || file.filename;
                         } else if (file.filename) {
                             // New format without cloudinaryUrl - construct URL based on file type
@@ -806,7 +809,8 @@
                             }
                             
                             fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.filename}`;
-                            fileId = file.filename;
+                            // Remove folder prefix from fileId if present
+                            fileId = file.filename.includes('/') ? file.filename.split('/').pop() : file.filename;
                             fileName = file.originalName || file.filename;
                         } else if (file.publicId) {
                             // Use publicId - determine resource type from original name
@@ -823,7 +827,8 @@
                             }
                             
                             fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.publicId}`;
-                            fileId = file.publicId;
+                            // Remove folder prefix from fileId if present  
+                            fileId = file.publicId.includes('/') ? file.publicId.split('/').pop() : file.publicId;
                             fileName = file.originalName || file.publicId;
                         }
                         
