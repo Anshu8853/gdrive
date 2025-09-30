@@ -866,21 +866,37 @@ router.get('/file/:fileId', isAuthenticated, async (req, res) => {
         const extension = userFile.originalName ? userFile.originalName.split('.').pop().toLowerCase() : '';
         
         if (typeof userFile === 'string') {
-            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            // For PDFs, ensure proper URL format
+            if (extension === 'pdf') {
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/fl_attachment/${userFile}.pdf`;
+            } else {
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            }
         } else if (userFile.cloudinaryUrl) {
             fileUrl = userFile.cloudinaryUrl;
         } else {
             let resourceType;
+            const publicId = userFile.filename || userFile.publicId;
+            
             if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension)) {
                 resourceType = 'image';
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
             } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) {
                 resourceType = 'video';
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
+            } else if (extension === 'pdf') {
+                // Special handling for PDFs - use raw upload with proper format
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
             } else {
                 resourceType = 'raw';
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
             }
-            
-            const publicId = userFile.filename || userFile.publicId;
-            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
+        }
+        
+        // For PDFs, set proper headers to enable inline viewing
+        if (extension === 'pdf') {
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'inline');
         }
         
         // Redirect to the Cloudinary URL
@@ -925,21 +941,37 @@ router.get('/file/:folder/:filename', isAuthenticated, async (req, res) => {
         const extension = userFile.originalName ? userFile.originalName.split('.').pop().toLowerCase() : '';
         
         if (typeof userFile === 'string') {
-            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            // For PDFs, ensure proper URL format
+            if (extension === 'pdf') {
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/fl_attachment/${userFile}.pdf`;
+            } else {
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            }
         } else if (userFile.cloudinaryUrl) {
             fileUrl = userFile.cloudinaryUrl;
         } else {
             let resourceType;
+            const publicId = userFile.filename || userFile.publicId;
+            
             if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension)) {
                 resourceType = 'image';
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
             } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) {
                 resourceType = 'video';
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
+            } else if (extension === 'pdf') {
+                // Special handling for PDFs - use raw upload with proper format
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
             } else {
                 resourceType = 'raw';
+                fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
             }
-            
-            const publicId = userFile.filename || userFile.publicId;
-            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
+        }
+        
+        // For PDFs, set proper headers to enable inline viewing
+        if (extension === 'pdf') {
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'inline');
         }
         
         // Redirect to the Cloudinary URL
@@ -948,6 +980,177 @@ router.get('/file/:folder/:filename', isAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('File serving error:', error);
         res.status(500).json({ error: 'Failed to serve file' });
+    }
+});
+
+// Dedicated PDF viewing route with enhanced error handling
+router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
+    try {
+        let { fileId } = req.params;
+        const userId = req.user.userId;
+        
+        // Handle fileId that might include folder prefix
+        if (fileId.includes('/')) {
+            fileId = fileId.split('/').pop();
+        }
+        
+        // Find the user and verify they own this file
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).send(`
+                <html>
+                    <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                        <h2>❌ User not found</h2>
+                        <p>Please log in again.</p>
+                        <a href="/user/login">Go to Login</a>
+                    </body>
+                </html>
+            `);
+        }
+        
+        // Check if the file belongs to this user
+        const userFile = user.file && user.file.find(file => {
+            if (typeof file === 'string') {
+                return file === fileId || file.includes(fileId);
+            } else if (file.filename) {
+                return file.filename === fileId || file.filename.includes(fileId);
+            } else if (file.publicId) {
+                return file.publicId === fileId || file.publicId.includes(fileId);
+            }
+            return false;
+        });
+        
+        if (!userFile) {
+            return res.status(403).send(`
+                <html>
+                    <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                        <h2>🚫 Access Denied</h2>
+                        <p>You don't have permission to view this file.</p>
+                        <a href="/user/dashboard">Go to Dashboard</a>
+                    </body>
+                </html>
+            `);
+        }
+        
+        // Check if it's a PDF file
+        const extension = userFile.originalName ? userFile.originalName.split('.').pop().toLowerCase() : '';
+        if (extension !== 'pdf') {
+            return res.status(400).send(`
+                <html>
+                    <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                        <h2>📄 Not a PDF File</h2>
+                        <p>This route is only for PDF files.</p>
+                        <a href="/user/dashboard">Go to Dashboard</a>
+                    </body>
+                </html>
+            `);
+        }
+        
+        // Generate Cloudinary URL for PDF
+        let pdfUrl;
+        if (typeof userFile === 'string') {
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+        } else if (userFile.cloudinaryUrl) {
+            pdfUrl = userFile.cloudinaryUrl;
+        } else {
+            const publicId = userFile.filename || userFile.publicId;
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+        }
+        
+        // Return a proper PDF viewer HTML page
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>PDF Viewer - ${userFile.originalName || fileId}</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                    .header { 
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white; 
+                        padding: 15px; 
+                        text-align: center;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    .pdf-container { 
+                        width: 100%; 
+                        height: calc(100vh - 80px); 
+                        border: none; 
+                    }
+                    .error { 
+                        text-align: center; 
+                        padding: 50px; 
+                        color: #dc3545;
+                    }
+                    .controls {
+                        background: #f8f9fa;
+                        padding: 10px;
+                        text-align: center;
+                        border-bottom: 1px solid #dee2e6;
+                    }
+                    .btn {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 8px 16px;
+                        border: none;
+                        border-radius: 5px;
+                        text-decoration: none;
+                        margin: 0 5px;
+                        display: inline-block;
+                    }
+                    .btn:hover { opacity: 0.8; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h3>📖 PDF Viewer: ${userFile.originalName || fileId}</h3>
+                </div>
+                <div class="controls">
+                    <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
+                    <a href="${pdfUrl}" download class="btn">📥 Download</a>
+                    <a href="/user/dashboard" class="btn">← Back to Dashboard</a>
+                </div>
+                <iframe 
+                    src="${pdfUrl}" 
+                    class="pdf-container"
+                    onerror="showError()"
+                    onload="hideError()">
+                </iframe>
+                <div id="error" class="error" style="display: none;">
+                    <h3>⚠️ Failed to load PDF</h3>
+                    <p>There was an error loading the PDF file. Please try:</p>
+                    <p>
+                        <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
+                        <a href="${pdfUrl}" download class="btn">📥 Download File</a>
+                    </p>
+                </div>
+                <script>
+                    function showError() {
+                        document.getElementById('error').style.display = 'block';
+                        document.querySelector('.pdf-container').style.display = 'none';
+                    }
+                    function hideError() {
+                        document.getElementById('error').style.display = 'none';
+                    }
+                </script>
+            </body>
+            </html>
+        `);
+        
+    } catch (error) {
+        console.error('PDF viewing error:', error);
+        res.status(500).send(`
+            <html>
+                <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+                    <h2>💥 Server Error</h2>
+                    <p>An error occurred while trying to view the PDF.</p>
+                    <p>Error: ${error.message}</p>
+                    <a href="/user/dashboard">Go to Dashboard</a>
+                </body>
+            </html>
+        `);
     }
 });
 

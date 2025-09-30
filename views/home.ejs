@@ -849,8 +849,8 @@
                         let downloadUrl = viewUrl;
                         
                         if (isPdf) {
-                            // For PDFs, we'll handle the viewing through our route
-                            viewUrl = `/user/file/${fileId}`;
+                            // For PDFs, use the dedicated PDF viewer route
+                            viewUrl = `/user/view-pdf/${fileId}`;
                             downloadUrl = `/user/file/${fileId}`;
                         }
                         %>
