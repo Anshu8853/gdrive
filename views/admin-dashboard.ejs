@@ -976,7 +976,7 @@
                                     <div class="file-item">
                                         <div class="file-info">
                                             <div class="file-name">
-                                                📄 <%= file.originalname %>
+                                                📄 <%= file.originalName || file.originalname || (typeof file === 'string' ? file : 'Unknown file') %>
                                                 <span class="file-size tooltip" data-tooltip="File size">
                                                     (<%= (file.size / 1024).toFixed(1) %> KB)
                                                 </span>
@@ -992,10 +992,37 @@
                                             </div>
                                         </div>
                                         <div class="file-actions">
-                                            <a href="/file/<%= file.filename %>" class="view-btn" target="_blank">
+                                            <%
+                                                // Generate Cloudinary URL
+                                                let fileUrl = '';
+                                                if (typeof file === 'string') {
+                                                    // Old format - string filename
+                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file}`;
+                                                } else if (file.cloudinaryUrl) {
+                                                    // New format - file has cloudinaryUrl
+                                                    fileUrl = file.cloudinaryUrl;
+                                                } else if (file.filename) {
+                                                    // New format without cloudinaryUrl - construct URL
+                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.filename}`;
+                                                } else if (file.publicId) {
+                                                    // Use publicId if available
+                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.publicId}`;
+                                                }
+                                                
+                                                // Get file identifier for deletion
+                                                let fileId = '';
+                                                if (typeof file === 'string') {
+                                                    fileId = file;
+                                                } else if (file.filename) {
+                                                    fileId = file.filename;
+                                                } else if (file.publicId) {
+                                                    fileId = file.publicId;
+                                                }
+                                            %>
+                                            <a href="<%= fileUrl %>" class="view-btn" target="_blank">
                                                 👁️ View
                                             </a>
-                                            <button class="delete-btn" onclick="deleteFile('<%= file.filename %>')">
+                                            <button class="delete-btn" onclick="deleteFile('<%= fileId %>')">
                                                 🗑️ Delete
                                             </button>
                                         </div>
