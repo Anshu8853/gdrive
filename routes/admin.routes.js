@@ -95,4 +95,134 @@ router.post('/delete-user-file', isAdmin, async (req, res, next) => {
     }
 });
 
+// Admin route to delete a user
+router.post('/delete-user', isAdmin, async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+        
+        if (!userId) {
+            return res.redirect('/admin/dashboard?error=User ID is required');
+        }
+
+        console.log(`Admin ${req.user.username} attempting to delete user ${userId}`);
+
+        // Get the user first to check files and prevent admin self-deletion
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.redirect('/admin/dashboard?error=User not found');
+        }
+
+        // Prevent admin from deleting themselves
+        if (user._id.toString() === req.user._id.toString()) {
+            return res.redirect('/admin/dashboard?error=You cannot delete your own account');
+        }
+
+        // Delete all user's files from Cloudinary first
+        if (user.file && Array.isArray(user.file) && user.file.length > 0) {
+            console.log(`Deleting ${user.file.length} files from Cloudinary for user ${user.username}`);
+            
+            for (const file of user.file) {
+                try {
+                    let filename;
+                    if (typeof file === 'string') {
+                        filename = file;
+                    } else if (typeof file === 'object' && file.filename) {
+                        filename = file.filename;
+                    } else if (typeof file === 'object' && file.publicId) {
+                        filename = file.publicId;
+                    }
+                    
+                    if (filename) {
+                        await new Promise((resolve, reject) => {
+                            cloudinary.uploader.destroy(filename, (error, result) => {
+                                if (error) {
+                                    console.error(`Error deleting file ${filename} from Cloudinary:`, error);
+                                    resolve(); // Continue even if file deletion fails
+                                } else {
+                                    console.log(`File ${filename} deleted from Cloudinary:`, result);
+                                    resolve();
+                                }
+                            });
+                        });
+                    }
+                } catch (fileError) {
+                    console.error('Error deleting individual file:', fileError);
+                    // Continue with user deletion even if some files fail to delete
+                }
+            }
+        }
+
+        // Delete the user from database
+        await userModel.findByIdAndDelete(userId);
+        
+        console.log(`User ${user.username} (${userId}) successfully deleted by admin ${req.user.username}`);
+        res.redirect('/admin/dashboard?success=User deleted successfully');
+
+    } catch (error) {
+        console.error('Admin delete user error:', error);
+        res.redirect('/admin/dashboard?error=Failed to delete user: ' + error.message);
+    }
+});
+
+// Admin route to delete user via DELETE method (for AJAX requests)
+router.delete('/delete-user/:userId', isAdmin, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        // Get the user first to check files and prevent admin self-deletion
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Prevent admin from deleting themselves
+        if (user._id.toString() === req.user._id.toString()) {
+            return res.status(400).json({ success: false, error: 'You cannot delete your own account' });
+        }
+
+        // Delete all user's files from Cloudinary first
+        if (user.file && Array.isArray(user.file) && user.file.length > 0) {
+            for (const file of user.file) {
+                try {
+                    let filename;
+                    if (typeof file === 'string') {
+                        filename = file;
+                    } else if (typeof file === 'object' && file.filename) {
+                        filename = file.filename;
+                    } else if (typeof file === 'object' && file.publicId) {
+                        filename = file.publicId;
+                    }
+                    
+                    if (filename) {
+                        await new Promise((resolve, reject) => {
+                            cloudinary.uploader.destroy(filename, (error, result) => {
+                                if (error) {
+                                    console.error(`Error deleting file ${filename} from Cloudinary:`, error);
+                                }
+                                resolve(); // Continue even if file deletion fails
+                            });
+                        });
+                    }
+                } catch (fileError) {
+                    console.error('Error deleting individual file:', fileError);
+                }
+            }
+        }
+
+        // Delete the user from database
+        await userModel.findByIdAndDelete(userId);
+        
+        console.log(`User ${user.username} (${userId}) successfully deleted by admin ${req.user.username}`);
+        res.json({ success: true, message: 'User deleted successfully' });
+
+    } catch (error) {
+        console.error('Admin delete user error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete user: ' + error.message });
+    }
+});
+
 module.exports = router;

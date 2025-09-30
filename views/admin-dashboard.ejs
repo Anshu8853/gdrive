@@ -324,6 +324,32 @@
             background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
             color: white;
         }
+        .delete-user-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            min-height: 32px;
+        }
+        .delete-user-btn:hover {
+            background: linear-gradient(135deg, #ee5a52 0%, #c62828 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+        .delete-user-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
         .success { 
             background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
             color: white; 
@@ -432,6 +458,13 @@
                 flex-direction: column;
                 gap: 8px;
                 text-align: center;
+            }
+            
+            .delete-user-btn {
+                padding: 8px 10px;
+                font-size: 14px;
+                min-width: 36px;
+                min-height: 36px;
             }
             
             .user-body {
@@ -672,10 +705,14 @@
         
         /* Touch-friendly improvements for Android */
         @media (pointer: coarse) {
-            .view-btn, .delete-btn, .back-btn {
+            .view-btn, .delete-btn, .back-btn, .delete-user-btn {
                 min-height: 44px; /* Apple's recommended touch target size */
                 min-width: 44px;
                 -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+            }
+            
+            .delete-user-btn:hover {
+                transform: none; /* Disable hover effects on touch devices */
             }
             
             .stat-card, .user-card, .file-item {
@@ -885,7 +922,15 @@
                             <% if (user.role === 'admin') { %>🛡️<% } else { %>👤<% } %> 
                             <%= user.username %>
                         </span>
-                        <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+                            <% if (user.role !== 'admin') { %>
+                                <button class="delete-user-btn" onclick="deleteUser('<%= user._id %>', '<%= user.username %>')" 
+                                        title="Delete User">
+                                    🗑️
+                                </button>
+                            <% } %>
+                        </div>
                     </div>
                     <div class="user-body">
                         <div class="user-info">
@@ -1022,6 +1067,64 @@
                         button.style.opacity = '1';
                     }, 2000);
                     alert('❌ Network error occurred while deleting file');
+                });
+            }
+        }
+        
+        function deleteUser(userId, username) {
+            if (confirm(`🗑️ Are you sure you want to delete user "${username}"? This will permanently delete:\n\n• The user account\n• All their uploaded files\n• This action cannot be undone!`)) {
+                const button = event.target;
+                const originalText = button.innerHTML;
+                
+                button.innerHTML = '⏳';
+                button.disabled = true;
+                button.style.opacity = '0.7';
+                
+                fetch('/admin/delete-user/' + encodeURIComponent(userId), {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add success animation
+                        button.innerHTML = '✅';
+                        button.style.background = 'linear-gradient(135deg, #51cf66 0%, #40c057 100%)';
+                        
+                        // Remove the user card with animation
+                        const userCard = button.closest('.user-card');
+                        userCard.style.transition = 'all 0.5s ease';
+                        userCard.style.transform = 'translateX(-100%)';
+                        userCard.style.opacity = '0';
+                        
+                        // Show success message and reload
+                        setTimeout(() => {
+                            alert(`✅ User "${username}" has been successfully deleted.`);
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        button.innerHTML = '❌';
+                        button.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)';
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                            button.style.opacity = '1';
+                        }, 2000);
+                        alert('❌ Error: ' + (data.error || 'Failed to delete user'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete user error:', error);
+                    button.innerHTML = '❌';
+                    button.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                    }, 2000);
+                    alert('❌ Network error occurred while deleting user');
                 });
             }
         }
