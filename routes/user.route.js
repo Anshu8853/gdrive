@@ -1168,11 +1168,11 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                 
                 <iframe 
                     id="pdfFrame"
-                    src="https://docs.google.com/viewer?url=${encodeURIComponent(rawPdfUrl)}&embedded=true" 
+                    src="/user/pdf-direct/${fileId}" 
                     class="pdf-container"
                     style="display: none;"
                     onload="hideLoading()"
-                    onerror="showError()">
+                    onerror="tryAlternatives()">
                 </iframe>
                 
                 <div id="error" class="error" style="display: none;">
@@ -1180,19 +1180,29 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                     <p>We're having trouble displaying this PDF file. Please try one of the options below:</p>
                     <div style="margin-top: 20px;">
                         <a href="/user/pdf-direct/${fileId}" target="_blank" class="btn">📖 Direct PDF Viewer</a>
+                        <a href="/user/pdf-simple/${fileId}" target="_blank" class="btn info">� Simple PDF Viewer</a>
                         <a href="${rawPdfUrl}" target="_blank" class="btn">🔗 Open Original Link</a>
-                        <a href="${pdfUrl}" target="_blank" class="btn info">🔗 Alternative Link</a>
                         <a href="${rawPdfUrl}" download="${userFile.originalName || fileId}" class="btn success">📥 Download File</a>
                     </div>
                     <p style="margin-top: 20px; font-size: 14px; color: #6c757d;">
                         Alternative viewers:<br>
                         <a href="https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(rawPdfUrl)}" target="_blank">Mozilla PDF.js Viewer</a> |
-                        <a href="/user/pdf-direct/${fileId}" target="_blank">Direct Server Viewer</a>
+                        <a href="/user/pdf-direct/${fileId}" target="_blank">Direct Server Viewer</a> |
+                        <a href="/user/pdf-simple/${fileId}" target="_blank">Simple HTML Viewer</a>
                     </p>
                 </div>
 
                 <script>
                     let loadTimeout;
+                    let attemptCount = 0;
+                    const maxAttempts = 3;
+                    
+                    const viewerUrls = [
+                        '/user/pdf-direct/${fileId}',
+                        '/user/pdf-simple/${fileId}',
+                        'https://docs.google.com/viewer?url=${encodeURIComponent(rawPdfUrl)}&embedded=true',
+                        'https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(rawPdfUrl)}'
+                    ];
                     
                     function hideLoading() {
                         document.getElementById('loading').style.display = 'none';
@@ -1207,56 +1217,64 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                         clearTimeout(loadTimeout);
                     }
                     
+                    function tryAlternatives() {
+                        attemptCount++;
+                        if (attemptCount < maxAttempts) {
+                            console.log('Trying alternative PDF viewer:', attemptCount);
+                            const frame = document.getElementById('pdfFrame');
+                            frame.src = viewerUrls[attemptCount];
+                            
+                            // Reset timeout for next attempt
+                            clearTimeout(loadTimeout);
+                            loadTimeout = setTimeout(tryAlternatives, 8000);
+                        } else {
+                            showError();
+                        }
+                    }
+                    
                     function reloadPdf() {
+                        attemptCount = 0;
                         document.getElementById('loading').style.display = 'block';
                         document.getElementById('pdfFrame').style.display = 'none';
                         document.getElementById('error').style.display = 'none';
                         
                         const frame = document.getElementById('pdfFrame');
-                        // Try direct server route first
-                        frame.src = '/user/pdf-direct/${fileId}';
+                        frame.src = viewerUrls[0]; // Start with direct route
                         
                         // Set timeout for loading
-                        loadTimeout = setTimeout(showError, 10000); // 10 second timeout
+                        loadTimeout = setTimeout(tryAlternatives, 8000);
                     }
                     
                     // Set initial loading timeout
-                    loadTimeout = setTimeout(function() {
-                        // If Google Docs viewer fails, try direct route
-                        const frame = document.getElementById('pdfFrame');
-                        frame.src = '/user/pdf-direct/${fileId}';
-                        
-                        // Give direct route a chance
-                        setTimeout(showError, 5000);
-                    }, 15000); // 15 second timeout
+                    loadTimeout = setTimeout(tryAlternatives, 10000);
                     
-                    // Try alternative PDF viewers if Google Docs viewer fails
+                    // Enhanced loading detection
                     window.addEventListener('load', function() {
                         const frame = document.getElementById('pdfFrame');
                         
-                        // Check if iframe loaded successfully after 3 seconds
+                        // Check iframe content after a delay
                         setTimeout(function() {
                             try {
-                                // If we can't access iframe content, it might be blocked
-                                if (frame.style.display === 'none') {
-                                    // Try direct PDF route first
-                                    frame.src = '/user/pdf-direct/${fileId}';
-                                    frame.style.display = 'block';
-                                    hideLoading();
-                                    
-                                    // If that fails, try PDF.js
-                                    setTimeout(function() {
-                                        if (frame.style.display === 'none') {
-                                            frame.src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent('${rawPdfUrl}');
-                                        }
-                                    }, 3000);
+                                // If iframe is still hidden or empty, try alternatives
+                                if (frame.style.display === 'none' || !frame.contentDocument) {
+                                    console.log('PDF frame not loaded, trying alternatives');
+                                    tryAlternatives();
                                 }
                             } catch (e) {
-                                // If still fails, show error
-                                setTimeout(showError, 2000);
+                                console.log('Cross-origin iframe, checking differently');
+                                // For cross-origin iframes, we can't access content
+                                // So we rely on onload/onerror events and timeouts
                             }
-                        }, 3000);
+                        }, 5000);
                     });
+                    
+                    // Force show content after initial load
+                    setTimeout(function() {
+                        const frame = document.getElementById('pdfFrame');
+                        if (document.getElementById('loading').style.display !== 'none') {
+                            hideLoading();
+                        }
+                    }, 3000);
                 </script>
             </body>
             </html>
@@ -1325,43 +1343,197 @@ router.get('/pdf-direct/:fileId', isAuthenticated, async (req, res) => {
             pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
         }
         
+        console.log('Fetching PDF from URL:', pdfUrl);
+        
         // Fetch the PDF from Cloudinary and stream it with proper headers
-        const https = require('https');
-        const url = require('url');
+        const axios = require('axios');
         
-        const parsedUrl = url.parse(pdfUrl);
-        const options = {
-            hostname: parsedUrl.hostname,
-            port: parsedUrl.port || 443,
-            path: parsedUrl.path,
-            method: 'GET'
-        };
-        
-        const proxyReq = https.request(options, (proxyRes) => {
+        try {
+            const response = await axios({
+                method: 'GET',
+                url: pdfUrl,
+                responseType: 'stream',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            
             // Set proper headers for PDF viewing
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', 'inline; filename="' + (userFile.originalName || fileId) + '"');
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-            
-            // Set CORS headers to allow iframe embedding
-            res.setHeader('X-Frame-Options', 'ALLOWALL');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
             res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('X-Frame-Options', 'SAMEORIGIN');
             
-            // Pipe the response
-            proxyRes.pipe(res);
-        });
-        
-        proxyReq.on('error', (err) => {
-            console.error('PDF proxy error:', err);
-            res.status(500).send('Error fetching PDF');
-        });
-        
-        proxyReq.end();
+            // Stream the PDF content
+            response.data.pipe(res);
+            
+        } catch (axiosError) {
+            console.error('Axios error:', axiosError.message);
+            
+            // Fallback to HTTPS module
+            const https = require('https');
+            const url = require('url');
+            
+            const parsedUrl = url.parse(pdfUrl);
+            const options = {
+                hostname: parsedUrl.hostname,
+                port: parsedUrl.port || 443,
+                path: parsedUrl.path,
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            };
+            
+            const proxyReq = https.request(options, (proxyRes) => {
+                if (proxyRes.statusCode !== 200) {
+                    console.error('HTTPS request failed:', proxyRes.statusCode);
+                    return res.status(404).send('PDF not found');
+                }
+                
+                // Set proper headers for PDF viewing
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', 'inline; filename="' + (userFile.originalName || fileId) + '"');
+                res.setHeader('Cache-Control', 'public, max-age=3600');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+                
+                // Pipe the response
+                proxyRes.pipe(res);
+            });
+            
+            proxyReq.on('error', (err) => {
+                console.error('PDF proxy error:', err);
+                res.status(500).send('Error fetching PDF');
+            });
+            
+            proxyReq.end();
+        }
         
     } catch (error) {
         console.error('PDF direct serving error:', error);
+        res.status(500).send('Server error');
+    }
+});
+
+// Simple HTML PDF viewer route (fallback)
+router.get('/pdf-simple/:fileId', isAuthenticated, async (req, res) => {
+    try {
+        let { fileId } = req.params;
+        const userId = req.user.userId;
+        
+        // Handle fileId that might include folder prefix
+        if (fileId.includes('/')) {
+            fileId = fileId.split('/').pop();
+        }
+        
+        // Find the user and verify they own this file
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        
+        // Check if the file belongs to this user
+        const userFile = user.file && user.file.find(file => {
+            if (typeof file === 'string') {
+                return file === fileId || file.includes(fileId);
+            } else if (file.filename) {
+                return file.filename === fileId || file.filename.includes(fileId);
+            } else if (file.publicId) {
+                return file.publicId === fileId || file.publicId.includes(fileId);
+            }
+            return false;
+        });
+        
+        if (!userFile) {
+            return res.status(403).send('Access denied');
+        }
+        
+        // Generate Cloudinary URL for PDF
+        let pdfUrl;
+        if (typeof userFile === 'string') {
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+        } else {
+            const publicId = userFile.filename || userFile.publicId;
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+        }
+        
+        // Return a simple HTML PDF viewer
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>PDF Viewer - ${userFile.originalName || fileId}</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                    .header { 
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white; 
+                        padding: 15px; 
+                        text-align: center;
+                    }
+                    .controls {
+                        background: #f8f9fa;
+                        padding: 10px;
+                        text-align: center;
+                        border-bottom: 1px solid #dee2e6;
+                    }
+                    .btn {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 8px 16px;
+                        border: none;
+                        border-radius: 5px;
+                        text-decoration: none;
+                        margin: 0 5px;
+                        display: inline-block;
+                    }
+                    .pdf-container { 
+                        width: 100%; 
+                        height: calc(100vh - 120px); 
+                        border: none; 
+                    }
+                    .fallback {
+                        text-align: center;
+                        padding: 50px;
+                        background: #f8f9fa;
+                        margin: 20px;
+                        border-radius: 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h3>📖 Simple PDF Viewer: ${userFile.originalName || fileId}</h3>
+                </div>
+                <div class="controls">
+                    <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
+                    <a href="${pdfUrl}" download="${userFile.originalName || fileId}" class="btn">📥 Download</a>
+                    <a href="/user/dashboard" class="btn">← Back to Dashboard</a>
+                </div>
+                
+                <object data="${pdfUrl}" type="application/pdf" class="pdf-container">
+                    <embed src="${pdfUrl}" type="application/pdf" class="pdf-container">
+                        <div class="fallback">
+                            <h3>📄 PDF Viewer Not Available</h3>
+                            <p>Your browser doesn't support embedded PDF viewing.</p>
+                            <p>Please use one of the options below:</p>
+                            <div style="margin-top: 20px;">
+                                <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open PDF in New Tab</a>
+                                <a href="${pdfUrl}" download="${userFile.originalName || fileId}" class="btn">📥 Download PDF</a>
+                            </div>
+                        </div>
+                    </embed>
+                </object>
+            </body>
+            </html>
+        `);
+        
+    } catch (error) {
+        console.error('Simple PDF viewer error:', error);
         res.status(500).send('Server error');
     }
 });
