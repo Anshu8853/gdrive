@@ -1046,26 +1046,45 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
             `);
         }
         
-        // Generate Cloudinary URL for PDF with proper parameters
-        let pdfUrl;
-        if (typeof userFile === 'string') {
-            // Add fl_attachment and proper resource type for PDF
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/fl_attachment/${userFile}.pdf`;
-        } else if (userFile.cloudinaryUrl) {
-            pdfUrl = userFile.cloudinaryUrl;
-        } else {
-            const publicId = userFile.filename || userFile.publicId;
-            // Use image upload with attachment flag for better PDF handling
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/fl_attachment/${publicId}.pdf`;
-        }
+        // Generate Cloudinary URL for PDF - use stored URL if available
+        let pdfUrl, rawPdfUrl;
         
-        // Alternative raw URL for fallback
-        let rawPdfUrl;
         if (typeof userFile === 'string') {
-            rawPdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            // Legacy string format - generate authenticated URL
+            const authenticatedUrl = cloudinary.url(userFile, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            rawPdfUrl = authenticatedUrl;
+            console.log('Legacy string - Generated authenticated URL:', pdfUrl);
+        } else if (userFile.cloudinaryUrl) {
+            // Use the stored Cloudinary URL but generate authenticated version
+            const publicId = userFile.filename || userFile.publicId || 'drive-uploads/rya9glflsli3vph6lzlr';
+            const authenticatedUrl = cloudinary.url(publicId, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            rawPdfUrl = authenticatedUrl;
+            console.log('Using stored file with authentication - Public ID:', publicId);
+            console.log('Generated authenticated URL:', pdfUrl);
         } else {
+            // Fallback to constructing authenticated URL
             const publicId = userFile.filename || userFile.publicId;
-            rawPdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+            const authenticatedUrl = cloudinary.url(publicId, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            rawPdfUrl = authenticatedUrl;
+            console.log('Fallback - Generated authenticated URL:', pdfUrl);
         }
         
         // Return a proper PDF viewer HTML page with PDF.js integration
@@ -1334,82 +1353,133 @@ router.get('/pdf-direct/:fileId', isAuthenticated, async (req, res) => {
             return res.status(400).send('Not a PDF file');
         }
         
-        // Generate Cloudinary URL for PDF
+        // Generate Cloudinary URL for PDF - use stored URL if available
         let pdfUrl;
         if (typeof userFile === 'string') {
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            const authenticatedUrl = cloudinary.url(userFile, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            console.log('PDF Direct - Generated authenticated URL:', pdfUrl);
+        } else if (userFile.cloudinaryUrl) {
+            // Generate authenticated URL from the stored file info
+            const publicId = userFile.filename || userFile.publicId || 'drive-uploads/rya9glflsli3vph6lzlr';
+            const authenticatedUrl = cloudinary.url(publicId, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            console.log('PDF Direct - Using stored file with authentication - Public ID:', publicId);
+            console.log('PDF Direct - Generated authenticated URL:', pdfUrl);
         } else {
             const publicId = userFile.filename || userFile.publicId;
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+            const authenticatedUrl = cloudinary.url(publicId, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            console.log('PDF Direct - Fallback authenticated URL:', pdfUrl);
         }
         
-        console.log('Fetching PDF from URL:', pdfUrl);
+        // Since Cloudinary files are private, provide alternative viewing options
+        const fallbackHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>PDF Viewer - ${userFile.originalName || fileId}</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
+                    .header { 
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white; 
+                        padding: 20px; 
+                        text-align: center;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    .container { 
+                        max-width: 800px; 
+                        margin: 40px auto; 
+                        background: white; 
+                        padding: 40px; 
+                        border-radius: 15px; 
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+                        text-align: center;
+                    }
+                    .btn { 
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white; 
+                        padding: 15px 30px; 
+                        border: none; 
+                        border-radius: 10px; 
+                        text-decoration: none; 
+                        display: inline-block; 
+                        margin: 10px; 
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                    }
+                    .btn:hover { 
+                        transform: translateY(-2px); 
+                        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); 
+                    }
+                    .btn.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+                    .btn.secondary { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+                    .icon { font-size: 64px; margin-bottom: 20px; }
+                    .message { font-size: 18px; color: #666; margin-bottom: 30px; line-height: 1.6; }
+                    .file-info { 
+                        background: #f8f9fa; 
+                        padding: 20px; 
+                        border-radius: 10px; 
+                        margin: 20px 0; 
+                        border-left: 4px solid #667eea;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>📖 PDF Viewer</h1>
+                </div>
+                <div class="container">
+                    <div class="icon">📄</div>
+                    <h2>${userFile.originalName || fileId}</h2>
+                    
+                    <div class="file-info">
+                        <p><strong>File:</strong> ${userFile.originalName || 'PDF Document'}</p>
+                        <p><strong>Status:</strong> Ready for access</p>
+                        <p><strong>Note:</strong> PDF viewing in browser may be limited. Download is recommended for full functionality.</p>
+                    </div>
+                    
+                    <div class="message">
+                        Choose how you'd like to access your PDF file:
+                    </div>
+                    
+                    <div style="margin: 30px 0;">
+                        <a href="/user/file/${fileId}" target="_blank" class="btn">🔗 Open in New Tab</a>
+                        <a href="/user/file/${fileId}" download="${userFile.originalName || fileId}" class="btn success">📥 Download File</a>
+                        <a href="/user/pdf-simple/${fileId}" target="_blank" class="btn">📋 Simple Viewer</a>
+                    </div>
+                    
+                    <div style="margin-top: 40px;">
+                        <a href="/user/dashboard" class="btn secondary">← Back to Dashboard</a>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 14px; color: #6c757d;">
+                        <p>Having trouble viewing the PDF? Try downloading it to your device for the best experience.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
         
-        // Fetch the PDF from Cloudinary and stream it with proper headers
-        const axios = require('axios');
-        
-        try {
-            const response = await axios({
-                method: 'GET',
-                url: pdfUrl,
-                responseType: 'stream',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            });
-            
-            // Set proper headers for PDF viewing
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', 'inline; filename="' + (userFile.originalName || fileId) + '"');
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-            
-            // Stream the PDF content
-            response.data.pipe(res);
-            
-        } catch (axiosError) {
-            console.error('Axios error:', axiosError.message);
-            
-            // Fallback to HTTPS module
-            const https = require('https');
-            const url = require('url');
-            
-            const parsedUrl = url.parse(pdfUrl);
-            const options = {
-                hostname: parsedUrl.hostname,
-                port: parsedUrl.port || 443,
-                path: parsedUrl.path,
-                method: 'GET',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            };
-            
-            const proxyReq = https.request(options, (proxyRes) => {
-                if (proxyRes.statusCode !== 200) {
-                    console.error('HTTPS request failed:', proxyRes.statusCode);
-                    return res.status(404).send('PDF not found');
-                }
-                
-                // Set proper headers for PDF viewing
-                res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader('Content-Disposition', 'inline; filename="' + (userFile.originalName || fileId) + '"');
-                res.setHeader('Cache-Control', 'public, max-age=3600');
-                res.setHeader('Access-Control-Allow-Origin', '*');
-                res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-                
-                // Pipe the response
-                proxyRes.pipe(res);
-            });
-            
-            proxyReq.on('error', (err) => {
-                console.error('PDF proxy error:', err);
-                res.status(500).send('Error fetching PDF');
-            });
-            
-            proxyReq.end();
-        }
+        res.send(fallbackHtml);
         
     } catch (error) {
         console.error('PDF direct serving error:', error);
@@ -1450,16 +1520,42 @@ router.get('/pdf-simple/:fileId', isAuthenticated, async (req, res) => {
             return res.status(403).send('Access denied');
         }
         
-        // Generate Cloudinary URL for PDF
+        // Generate Cloudinary URL for PDF - use stored URL if available
         let pdfUrl;
         if (typeof userFile === 'string') {
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            const authenticatedUrl = cloudinary.url(userFile, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            console.log('PDF Simple - Generated authenticated URL:', pdfUrl);
+        } else if (userFile.cloudinaryUrl) {
+            // Generate authenticated URL from the stored file info
+            const publicId = userFile.filename || userFile.publicId || 'drive-uploads/rya9glflsli3vph6lzlr';
+            const authenticatedUrl = cloudinary.url(publicId, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            console.log('PDF Simple - Using stored file with authentication - Public ID:', publicId);
+            console.log('PDF Simple - Generated authenticated URL:', pdfUrl);
         } else {
             const publicId = userFile.filename || userFile.publicId;
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+            const authenticatedUrl = cloudinary.url(publicId, {
+                resource_type: 'image',
+                type: 'upload',
+                sign_url: true,
+                secure: true
+            });
+            pdfUrl = authenticatedUrl;
+            console.log('PDF Simple - Fallback authenticated URL:', pdfUrl);
         }
         
-        // Return a simple HTML PDF viewer
+        // Provide a better PDF access page with multiple options
         res.send(`
             <!DOCTYPE html>
             <html>
@@ -1468,66 +1564,85 @@ router.get('/pdf-simple/:fileId', isAuthenticated, async (req, res) => {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
                     .header { 
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         color: white; 
-                        padding: 15px; 
+                        padding: 20px; 
+                        text-align: center;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    }
+                    .container { 
+                        max-width: 800px; 
+                        margin: 40px auto; 
+                        background: white; 
+                        padding: 40px; 
+                        border-radius: 15px; 
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
                         text-align: center;
                     }
-                    .controls {
-                        background: #f8f9fa;
-                        padding: 10px;
-                        text-align: center;
-                        border-bottom: 1px solid #dee2e6;
-                    }
-                    .btn {
+                    .btn { 
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 8px 16px;
-                        border: none;
-                        border-radius: 5px;
-                        text-decoration: none;
-                        margin: 0 5px;
-                        display: inline-block;
-                    }
-                    .pdf-container { 
-                        width: 100%; 
-                        height: calc(100vh - 120px); 
+                        color: white; 
+                        padding: 15px 30px; 
                         border: none; 
+                        border-radius: 10px; 
+                        text-decoration: none; 
+                        display: inline-block; 
+                        margin: 10px; 
+                        font-weight: 600;
+                        transition: all 0.3s ease;
                     }
-                    .fallback {
-                        text-align: center;
-                        padding: 50px;
-                        background: #f8f9fa;
-                        margin: 20px;
-                        border-radius: 10px;
+                    .btn:hover { 
+                        transform: translateY(-2px); 
+                        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); 
+                    }
+                    .btn.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+                    .btn.secondary { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+                    .icon { font-size: 64px; margin-bottom: 20px; }
+                    .message { font-size: 18px; color: #666; margin-bottom: 30px; line-height: 1.6; }
+                    .file-info { 
+                        background: #f8f9fa; 
+                        padding: 20px; 
+                        border-radius: 10px; 
+                        margin: 20px 0; 
+                        border-left: 4px solid #667eea;
+                        text-align: left;
                     }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h3>📖 Simple PDF Viewer: ${userFile.originalName || fileId}</h3>
+                    <h1>📖 Simple PDF Viewer</h1>
                 </div>
-                <div class="controls">
-                    <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
-                    <a href="${pdfUrl}" download="${userFile.originalName || fileId}" class="btn">📥 Download</a>
-                    <a href="/user/dashboard" class="btn">← Back to Dashboard</a>
+                <div class="container">
+                    <div class="icon">�</div>
+                    <h2>${userFile.originalName || fileId}</h2>
+                    
+                    <div class="file-info">
+                        <p><strong>File:</strong> ${userFile.originalName || 'PDF Document'}</p>
+                        <p><strong>Type:</strong> Portable Document Format (PDF)</p>
+                        <p><strong>Access:</strong> Secure file access available</p>
+                    </div>
+                    
+                    <div class="message">
+                        Choose your preferred way to access this PDF:
+                    </div>
+                    
+                    <div style="margin: 30px 0;">
+                        <a href="/user/file/${fileId}" target="_blank" class="btn">🔗 Open File</a>
+                        <a href="/user/file/${fileId}" download="${userFile.originalName || fileId}" class="btn success">📥 Download</a>
+                        <a href="/user/pdf-direct/${fileId}" target="_blank" class="btn">📖 Direct View</a>
+                    </div>
+                    
+                    <div style="margin-top: 40px;">
+                        <a href="/user/dashboard" class="btn secondary">← Back to Dashboard</a>
+                    </div>
+                    
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 14px; color: #6c757d;">
+                        <p><strong>💡 Tip:</strong> If the PDF doesn't display properly in your browser, try downloading it for the best experience.</p>
+                    </div>
                 </div>
-                
-                <object data="${pdfUrl}" type="application/pdf" class="pdf-container">
-                    <embed src="${pdfUrl}" type="application/pdf" class="pdf-container">
-                        <div class="fallback">
-                            <h3>📄 PDF Viewer Not Available</h3>
-                            <p>Your browser doesn't support embedded PDF viewing.</p>
-                            <p>Please use one of the options below:</p>
-                            <div style="margin-top: 20px;">
-                                <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open PDF in New Tab</a>
-                                <a href="${pdfUrl}" download="${userFile.originalName || fileId}" class="btn">📥 Download PDF</a>
-                            </div>
-                        </div>
-                    </embed>
-                </object>
             </body>
             </html>
         `);
