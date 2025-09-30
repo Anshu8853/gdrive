@@ -15,36 +15,66 @@ router.get('/debug-env', (req, res) => {
         EMAIL_FROM: {
             exists: !!process.env.EMAIL_FROM,
             value: process.env.EMAIL_FROM ? process.env.EMAIL_FROM.substring(0, 10) + '...' : 'NOT SET',
-            length: process.env.EMAIL_FROM ? process.env.EMAIL_FROM.length : 0
+            length: process.env.EMAIL_FROM ? process.env.EMAIL_FROM.length : 0,
+            raw: process.env.EMAIL_FROM || 'UNDEFINED'
         },
         EMAIL_USER: {
             exists: !!process.env.EMAIL_USER,
             value: process.env.EMAIL_USER ? process.env.EMAIL_USER.substring(0, 10) + '...' : 'NOT SET',
-            length: process.env.EMAIL_USER ? process.env.EMAIL_USER.length : 0
+            length: process.env.EMAIL_USER ? process.env.EMAIL_USER.length : 0,
+            raw: process.env.EMAIL_USER || 'UNDEFINED'
         },
         EMAIL_PASS: {
             exists: !!process.env.EMAIL_PASS,
             value: process.env.EMAIL_PASS ? '[HIDDEN - LENGTH: ' + process.env.EMAIL_PASS.length + ']' : 'NOT SET',
-            length: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0
+            length: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length : 0,
+            isCorrectLength: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.length === 16 : false
         },
         EMAIL_HOST: {
             exists: !!process.env.EMAIL_HOST,
-            value: process.env.EMAIL_HOST || 'NOT SET'
+            value: process.env.EMAIL_HOST || 'NOT SET',
+            raw: process.env.EMAIL_HOST || 'UNDEFINED'
         },
         EMAIL_PORT: {
             exists: !!process.env.EMAIL_PORT,
-            value: process.env.EMAIL_PORT || 'NOT SET'
+            value: process.env.EMAIL_PORT || 'NOT SET',
+            raw: process.env.EMAIL_PORT || 'UNDEFINED'
         },
+        
+        // All environment variables starting with EMAIL
+        allEmailVars: Object.keys(process.env).filter(key => key.startsWith('EMAIL')),
         
         // Other important vars
         hasMongoDb: !!process.env.MONGODB_URI,
         hasJwtSecret: !!process.env.JWT_SECRET,
         
-        // Validation result
-        emailConfigValid: require('../services/emailService').validateEmailConfig()
+        // Test validation function directly
+        validationTest: (() => {
+            try {
+                const { validateEmailConfig } = require('../services/emailService');
+                return validateEmailConfig();
+            } catch (error) {
+                return `ERROR: ${error.message}`;
+            }
+        })()
     };
     
     res.json(envCheck);
+});
+
+// Alternative verification route
+router.get('/env-raw', (req, res) => {
+    const emailVars = {};
+    ['EMAIL_FROM', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_HOST', 'EMAIL_PORT'].forEach(key => {
+        emailVars[key] = process.env[key] || null;
+    });
+    
+    res.json({
+        message: 'Raw environment variable check',
+        emailVars,
+        isVercel: !!process.env.VERCEL,
+        nodeEnv: process.env.NODE_ENV
+    });
 });
 
 module.exports = router;
