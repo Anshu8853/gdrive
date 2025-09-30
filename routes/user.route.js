@@ -1046,18 +1046,29 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
             `);
         }
         
-        // Generate Cloudinary URL for PDF
+        // Generate Cloudinary URL for PDF with proper parameters
         let pdfUrl;
         if (typeof userFile === 'string') {
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+            // Add fl_attachment and proper resource type for PDF
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/fl_attachment/${userFile}.pdf`;
         } else if (userFile.cloudinaryUrl) {
             pdfUrl = userFile.cloudinaryUrl;
         } else {
             const publicId = userFile.filename || userFile.publicId;
-            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+            // Use image upload with attachment flag for better PDF handling
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/fl_attachment/${publicId}.pdf`;
         }
         
-        // Return a proper PDF viewer HTML page
+        // Alternative raw URL for fallback
+        let rawPdfUrl;
+        if (typeof userFile === 'string') {
+            rawPdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+        } else {
+            const publicId = userFile.filename || userFile.publicId;
+            rawPdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+        }
+        
+        // Return a proper PDF viewer HTML page with PDF.js integration
         res.send(`
             <!DOCTYPE html>
             <html>
@@ -1066,7 +1077,7 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
                     .header { 
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         color: white; 
@@ -1074,33 +1085,68 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                         text-align: center;
                         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
                     }
+                    .controls {
+                        background: #fff;
+                        padding: 15px;
+                        text-align: center;
+                        border-bottom: 1px solid #dee2e6;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    }
+                    .btn {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 10px 20px;
+                        border: none;
+                        border-radius: 8px;
+                        text-decoration: none;
+                        margin: 0 8px;
+                        display: inline-block;
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                    }
+                    .btn:hover { 
+                        transform: translateY(-2px);
+                        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+                    }
+                    .btn.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+                    .btn.info { background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%); }
                     .pdf-container { 
                         width: 100%; 
-                        height: calc(100vh - 80px); 
+                        height: calc(100vh - 150px); 
                         border: none; 
+                        background: white;
+                        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
                     }
                     .error { 
                         text-align: center; 
                         padding: 50px; 
                         color: #dc3545;
+                        background: white;
+                        margin: 20px;
+                        border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
                     }
-                    .controls {
-                        background: #f8f9fa;
-                        padding: 10px;
+                    .loading {
                         text-align: center;
-                        border-bottom: 1px solid #dee2e6;
+                        padding: 50px;
+                        color: #6c757d;
+                        background: white;
+                        margin: 20px;
+                        border-radius: 10px;
                     }
-                    .btn {
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 8px 16px;
-                        border: none;
-                        border-radius: 5px;
-                        text-decoration: none;
-                        margin: 0 5px;
-                        display: inline-block;
+                    .spinner {
+                        border: 4px solid #f3f3f3;
+                        border-top: 4px solid #667eea;
+                        border-radius: 50%;
+                        width: 50px;
+                        height: 50px;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 20px;
                     }
-                    .btn:hover { opacity: 0.8; }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
                 </style>
             </head>
             <body>
@@ -1108,32 +1154,109 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                     <h3>📖 PDF Viewer: ${userFile.originalName || fileId}</h3>
                 </div>
                 <div class="controls">
-                    <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
-                    <a href="${pdfUrl}" download class="btn">📥 Download</a>
+                    <a href="${rawPdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
+                    <a href="${rawPdfUrl}" download="${userFile.originalName || fileId}" class="btn success">📥 Download</a>
+                    <button onclick="reloadPdf()" class="btn info">🔄 Reload</button>
                     <a href="/user/dashboard" class="btn">← Back to Dashboard</a>
                 </div>
+                
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <h3>Loading PDF...</h3>
+                    <p>Please wait while we load your document.</p>
+                </div>
+                
                 <iframe 
-                    src="${pdfUrl}" 
+                    id="pdfFrame"
+                    src="https://docs.google.com/viewer?url=${encodeURIComponent(rawPdfUrl)}&embedded=true" 
                     class="pdf-container"
-                    onerror="showError()"
-                    onload="hideError()">
+                    style="display: none;"
+                    onload="hideLoading()"
+                    onerror="showError()">
                 </iframe>
+                
                 <div id="error" class="error" style="display: none;">
                     <h3>⚠️ Failed to load PDF</h3>
-                    <p>There was an error loading the PDF file. Please try:</p>
-                    <p>
-                        <a href="${pdfUrl}" target="_blank" class="btn">🔗 Open in New Tab</a>
-                        <a href="${pdfUrl}" download class="btn">📥 Download File</a>
+                    <p>We're having trouble displaying this PDF file. Please try one of the options below:</p>
+                    <div style="margin-top: 20px;">
+                        <a href="/user/pdf-direct/${fileId}" target="_blank" class="btn">📖 Direct PDF Viewer</a>
+                        <a href="${rawPdfUrl}" target="_blank" class="btn">🔗 Open Original Link</a>
+                        <a href="${pdfUrl}" target="_blank" class="btn info">🔗 Alternative Link</a>
+                        <a href="${rawPdfUrl}" download="${userFile.originalName || fileId}" class="btn success">📥 Download File</a>
+                    </div>
+                    <p style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                        Alternative viewers:<br>
+                        <a href="https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(rawPdfUrl)}" target="_blank">Mozilla PDF.js Viewer</a> |
+                        <a href="/user/pdf-direct/${fileId}" target="_blank">Direct Server Viewer</a>
                     </p>
                 </div>
+
                 <script>
+                    let loadTimeout;
+                    
+                    function hideLoading() {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('pdfFrame').style.display = 'block';
+                        clearTimeout(loadTimeout);
+                    }
+                    
                     function showError() {
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('pdfFrame').style.display = 'none';
                         document.getElementById('error').style.display = 'block';
-                        document.querySelector('.pdf-container').style.display = 'none';
+                        clearTimeout(loadTimeout);
                     }
-                    function hideError() {
+                    
+                    function reloadPdf() {
+                        document.getElementById('loading').style.display = 'block';
+                        document.getElementById('pdfFrame').style.display = 'none';
                         document.getElementById('error').style.display = 'none';
+                        
+                        const frame = document.getElementById('pdfFrame');
+                        // Try direct server route first
+                        frame.src = '/user/pdf-direct/${fileId}';
+                        
+                        // Set timeout for loading
+                        loadTimeout = setTimeout(showError, 10000); // 10 second timeout
                     }
+                    
+                    // Set initial loading timeout
+                    loadTimeout = setTimeout(function() {
+                        // If Google Docs viewer fails, try direct route
+                        const frame = document.getElementById('pdfFrame');
+                        frame.src = '/user/pdf-direct/${fileId}';
+                        
+                        // Give direct route a chance
+                        setTimeout(showError, 5000);
+                    }, 15000); // 15 second timeout
+                    
+                    // Try alternative PDF viewers if Google Docs viewer fails
+                    window.addEventListener('load', function() {
+                        const frame = document.getElementById('pdfFrame');
+                        
+                        // Check if iframe loaded successfully after 3 seconds
+                        setTimeout(function() {
+                            try {
+                                // If we can't access iframe content, it might be blocked
+                                if (frame.style.display === 'none') {
+                                    // Try direct PDF route first
+                                    frame.src = '/user/pdf-direct/${fileId}';
+                                    frame.style.display = 'block';
+                                    hideLoading();
+                                    
+                                    // If that fails, try PDF.js
+                                    setTimeout(function() {
+                                        if (frame.style.display === 'none') {
+                                            frame.src = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent('${rawPdfUrl}');
+                                        }
+                                    }, 3000);
+                                }
+                            } catch (e) {
+                                // If still fails, show error
+                                setTimeout(showError, 2000);
+                            }
+                        }, 3000);
+                    });
                 </script>
             </body>
             </html>
@@ -1151,6 +1274,95 @@ router.get('/view-pdf/:fileId', isAuthenticated, async (req, res) => {
                 </body>
             </html>
         `);
+    }
+});
+
+// Direct PDF serving route that proxies the file with proper headers
+router.get('/pdf-direct/:fileId', isAuthenticated, async (req, res) => {
+    try {
+        let { fileId } = req.params;
+        const userId = req.user.userId;
+        
+        // Handle fileId that might include folder prefix
+        if (fileId.includes('/')) {
+            fileId = fileId.split('/').pop();
+        }
+        
+        // Find the user and verify they own this file
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        
+        // Check if the file belongs to this user
+        const userFile = user.file && user.file.find(file => {
+            if (typeof file === 'string') {
+                return file === fileId || file.includes(fileId);
+            } else if (file.filename) {
+                return file.filename === fileId || file.filename.includes(fileId);
+            } else if (file.publicId) {
+                return file.publicId === fileId || file.publicId.includes(fileId);
+            }
+            return false;
+        });
+        
+        if (!userFile) {
+            return res.status(403).send('Access denied');
+        }
+        
+        // Check if it's a PDF file
+        const extension = userFile.originalName ? userFile.originalName.split('.').pop().toLowerCase() : '';
+        if (extension !== 'pdf') {
+            return res.status(400).send('Not a PDF file');
+        }
+        
+        // Generate Cloudinary URL for PDF
+        let pdfUrl;
+        if (typeof userFile === 'string') {
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+        } else {
+            const publicId = userFile.filename || userFile.publicId;
+            pdfUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+        }
+        
+        // Fetch the PDF from Cloudinary and stream it with proper headers
+        const https = require('https');
+        const url = require('url');
+        
+        const parsedUrl = url.parse(pdfUrl);
+        const options = {
+            hostname: parsedUrl.hostname,
+            port: parsedUrl.port || 443,
+            path: parsedUrl.path,
+            method: 'GET'
+        };
+        
+        const proxyReq = https.request(options, (proxyRes) => {
+            // Set proper headers for PDF viewing
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'inline; filename="' + (userFile.originalName || fileId) + '"');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            
+            // Set CORS headers to allow iframe embedding
+            res.setHeader('X-Frame-Options', 'ALLOWALL');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            
+            // Pipe the response
+            proxyRes.pipe(res);
+        });
+        
+        proxyReq.on('error', (err) => {
+            console.error('PDF proxy error:', err);
+            res.status(500).send('Error fetching PDF');
+        });
+        
+        proxyReq.end();
+        
+    } catch (error) {
+        console.error('PDF direct serving error:', error);
+        res.status(500).send('Server error');
     }
 });
 
