@@ -2,17 +2,25 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Login - GDrive</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 10px;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .container { 
             max-width: 450px; 
@@ -126,6 +134,153 @@
             font-size: 60px; 
             margin-bottom: 20px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+        
+        /* Android & Mobile Optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+            
+            .container {
+                max-width: 100%;
+                margin: 5px;
+                padding: 25px 20px;
+                border-radius: 15px;
+                min-height: auto;
+            }
+            
+            h1 {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+            
+            .description {
+                font-size: 14px;
+                margin-bottom: 25px;
+                line-height: 1.4;
+            }
+            
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            label {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+            
+            input {
+                padding: 12px 15px;
+                font-size: 16px; /* Prevent zoom on focus */
+                border-radius: 10px;
+            }
+            
+            button {
+                padding: 14px;
+                font-size: 16px;
+                border-radius: 12px;
+                margin-top: 15px;
+            }
+            
+            .links {
+                margin-top: 20px;
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            
+            .links a {
+                font-size: 14px;
+                padding: 8px 0;
+            }
+            
+            .success, .error {
+                padding: 12px 15px;
+                font-size: 14px;
+                margin-bottom: 20px;
+                border-radius: 10px;
+            }
+            
+            .icon {
+                font-size: 48px;
+                margin-bottom: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                margin: 2px;
+                padding: 20px 15px;
+                border-radius: 12px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .description {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+            
+            input {
+                padding: 10px 12px;
+                font-size: 16px;
+            }
+            
+            button {
+                padding: 12px;
+                font-size: 15px;
+            }
+            
+            .icon {
+                font-size: 40px;
+                margin-bottom: 12px;
+            }
+        }
+        
+        /* Touch-friendly improvements */
+        @media (pointer: coarse) {
+            button {
+                min-height: 44px; /* Apple's recommended touch target size */
+                -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+            }
+            
+            input {
+                min-height: 44px;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            .links a {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                -webkit-tap-highlight-color: rgba(102, 126, 234, 0.1);
+            }
+            
+            button:hover {
+                transform: none; /* Disable hover effects on touch devices */
+            }
+        }
+        
+        /* Android Chrome specific optimizations */
+        @media screen and (-webkit-min-device-pixel-ratio: 1) {
+            input {
+                font-size: 16px; /* Prevent zoom on focus */
+            }
+            
+            .container {
+                -webkit-overflow-scrolling: touch; /* Smooth scrolling */
+            }
+            
+            /* Better text rendering on Android */
+            body {
+                text-rendering: optimizeLegibility;
+                -webkit-text-size-adjust: 100%;
+            }
         }
     </style>
 </head>
