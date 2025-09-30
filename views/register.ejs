@@ -47,31 +47,18 @@
                 <div class="email-display">📧 <%= email %></div>
             <% } %>
             
-        <% } else { %>
-            <!-- Step 1: Email Verification -->
-            <div class="step-indicator">
-                <span class="step active">1</span>
-                <span class="step">2</span>
+            <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error">
+                <strong>Error:</strong> <%= error %>
             </div>
+            <% } %>
             
-            <h1>Create Account</h1>
-            <p class="description">Step 1: Enter your email address to get started. We'll send you a verification code.</p>
-        <% } %>
-        
-        <% if (typeof error !== 'undefined' && error) { %>
-        <div class="error">
-            <strong>Error:</strong> <%= error %>
-        </div>
-        <% } %>
-        
-        <% if (typeof success !== 'undefined' && success) { %>
-        <div class="success">
-            <strong>Success:</strong> <%= success %>
-        </div>
-        <% } %>
-        
-        <% if (typeof step !== 'undefined' && step === 2) { %>
-            <!-- Step 2: Complete Registration with OTP -->
+            <% if (typeof success !== 'undefined' && success) { %>
+            <div class="success">
+                <strong>Success:</strong> <%= success %>
+            </div>
+            <% } %>
+            
             <div class="otp-info">
                 📧 Check your email for a 6-digit verification code. The code will expire in 15 minutes.
             </div>
@@ -104,6 +91,26 @@
             
         <% } else { %>
             <!-- Step 1: Email Verification -->
+            <div class="step-indicator">
+                <span class="step active">1</span>
+                <span class="step">2</span>
+            </div>
+            
+            <h1>Create Account</h1>
+            <p class="description">Step 1: Enter your email address to get started. We'll send you a verification code.</p>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+            <div class="error">
+                <strong>Error:</strong> <%= error %>
+            </div>
+            <% } %>
+            
+            <% if (typeof success !== 'undefined' && success) { %>
+            <div class="success">
+                <strong>Success:</strong> <%= success %>
+            </div>
+            <% } %>
+            
             <form action="/user/register/send-otp" method="POST">
                 <div class="form-group">
                     <label for="email">Email Address</label>
@@ -133,20 +140,5 @@
             });
         }
     </script>
-</body>
-</html>
-            
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Create a password" required>
-            </div>
-            
-            <button type="submit">Create Account</button>
-        </form>
-        
-        <div class="links">
-            <p>Already have an account? <a href="/user/login">Sign In</a></p>
-        </div>
-    </div>
 </body>
 </html>
