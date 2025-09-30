@@ -2,16 +2,23 @@ const nodemailer = require('nodemailer');
 
 // Validate email configuration
 const validateEmailConfig = () => {
-  const required = ['EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
+  const required = ['EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM', 'EMAIL_HOST', 'EMAIL_PORT'];
   const missing = required.filter(key => !process.env[key] || process.env[key] === 'your-email@gmail.com' || process.env[key] === 'your-16-digit-app-password');
+  
+  // Log detailed environment info for debugging
+  console.log('🔍 Email configuration check:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('VERCEL:', process.env.VERCEL);
+  
+  required.forEach(key => {
+    const value = process.env[key];
+    const status = value ? '✅' : '❌';
+    const displayValue = value ? (value.length > 10 ? value.substring(0, 8) + '***' : value) : 'undefined';
+    console.log(`  ${status} ${key}: ${displayValue}`);
+  });
   
   if (missing.length > 0) {
     console.log('❌ Email configuration incomplete. Missing/placeholder values for:', missing);
-    console.log('🔍 Environment check:');
-    required.forEach(key => {
-      const value = process.env[key];
-      console.log(`  ${key}: ${value ? (value.length > 10 ? value.substring(0, 5) + '***' : 'short_value') : 'undefined'}`);
-    });
     return false;
   }
   
