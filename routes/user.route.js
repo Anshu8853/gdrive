@@ -25,7 +25,22 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'drive-uploads',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'txt', 'doc', 'docx'],
+        allowed_formats: [
+            // Images
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg',
+            // Videos
+            'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp',
+            // Documents
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf',
+            // Archives
+            'zip', 'rar', '7z', 'tar', 'gz',
+            // Audio
+            'mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a',
+            // Code files
+            'js', 'css', 'html', 'json', 'xml', 'csv',
+            // Other
+            'epub', 'mobi', 'psd', 'ai', 'sketch'
+        ],
         resource_type: 'auto' // This allows different file types
     },
 });
@@ -33,21 +48,47 @@ const storage = new CloudinaryStorage({
 const upload = multer({ 
     storage: storage,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
+        fileSize: 50 * 1024 * 1024, // 50MB limit for videos and large files
     },
     fileFilter: (req, file, cb) => {
         console.log('File filter - mimetype:', file.mimetype);
         const allowedTypes = [
-            'image/jpeg', 'image/jpg', 'image/png', 
-            'application/pdf', 'text/plain',
+            // Images
+            'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 
+            'image/bmp', 'image/tiff', 'image/svg+xml',
+            // Videos
+            'video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/flv', 
+            'video/webm', 'video/mkv', 'video/3gpp',
+            // Documents
+            'application/pdf', 'text/plain', 'application/rtf',
             'application/msword', 
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            // Archives
+            'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+            'application/x-tar', 'application/gzip',
+            // Audio
+            'audio/mpeg', 'audio/wav', 'audio/aac', 'audio/ogg', 'audio/flac', 'audio/mp4',
+            // Code files
+            'application/javascript', 'text/css', 'text/html', 'application/json',
+            'application/xml', 'text/csv',
+            // Other
+            'application/epub+zip', 'application/x-mobipocket-ebook',
+            'image/vnd.adobe.photoshop', 'application/postscript'
         ];
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type. Only JPG, PNG, PDF, TXT, DOC, and DOCX files are allowed.'));
-        }
+        
+        // Allow all file types for maximum flexibility
+        cb(null, true);
+        
+        // Uncomment below if you want to restrict to specific types
+        // if (allowedTypes.includes(file.mimetype)) {
+        //     cb(null, true);
+        // } else {
+        //     cb(new Error(`Invalid file type: ${file.mimetype}. Please contact support if you need this file type supported.`));
+        // }
     }
 });
 
@@ -327,7 +368,7 @@ router.post('/upload', isAuthenticated, (req, res, next) => {
             console.error('Multer error:', err);
             if (err instanceof multer.MulterError) {
                 if (err.code === 'LIMIT_FILE_SIZE') {
-                    return res.redirect('/home?error=File size too large (max 10MB)');
+                    return res.redirect('/home?error=File size too large (max 50MB)');
                 }
                 return res.redirect('/home?error=Upload error: ' + err.message);
             }

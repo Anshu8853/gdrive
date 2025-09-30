@@ -297,6 +297,49 @@
             color: #667eea;
         }
         
+        /* File Type Specific Styling */
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .view-btn {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+        .delete-btn {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        /* Tooltip for file extensions */
+        .file-extension-tooltip {
+            position: relative;
+            cursor: help;
+        }
+        .file-extension-tooltip:hover::after {
+            content: attr(data-type);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+        
         /* Android & Mobile Optimizations */
         @media (max-width: 768px) {
             body {
@@ -545,9 +588,10 @@
             <form action="/user/upload" method="POST" enctype="multipart/form-data" onsubmit="return validateFile()">
                 <div class="form-group">
                     <label for="file">🗂️ Choose File to Upload</label>
-                    <input type="file" id="file" name="file" required accept=".jpg,.jpeg,.png,.pdf,.txt,.doc,.docx">
+                    <input type="file" id="file" name="file" required 
+                           accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.svg,.mp4,.avi,.mov,.wmv,.flv,.webm,.mkv,.3gp,.mp3,.wav,.aac,.ogg,.flac,.m4a,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.zip,.rar,.7z,.tar,.gz,.js,.css,.html,.json,.xml,.csv,.epub,.mobi,.psd,.ai,.sketch">
                     <div class="file-hint">
-                        📋 Supported formats: JPG, PNG, PDF, TXT, DOC, DOCX (Max: 10MB)
+                        📋 Supported: Images (JPG, PNG, GIF), Videos (MP4, AVI, MOV), Audio (MP3, WAV), Documents (PDF, DOC, PPT, XLS), Archives (ZIP, RAR), Code files & more! (Max: 50MB)
                     </div>
                 </div>
                 
@@ -565,10 +609,10 @@
                 return false;
             }
             
-            // Check file size (10MB limit)
-            const maxSize = 10 * 1024 * 1024; // 10MB
+            // Check file size (50MB limit)
+            const maxSize = 50 * 1024 * 1024; // 50MB
             if (file.size > maxSize) {
-                alert('File size must be less than 10MB!');
+                alert('File size must be less than 50MB!');
                 return false;
             }
             
@@ -673,21 +717,54 @@
                 <div class="file-item">
                     <div class="file-info">
                         <div class="file-name">
-                            📄 <% 
+                            <% 
                             let displayName = '';
+                            let fileExtension = '';
+                            let fileIcon = '';
+                            
                             if (typeof file === 'string') {
                                 // Old format - show the file ID, but try to make it more readable
                                 displayName = file.split('/').pop() || file;
+                                fileExtension = '';
+                                fileIcon = '📄';
                             } else if (file.originalName) {
                                 displayName = file.originalName;
+                                fileExtension = file.originalName.split('.').pop().toLowerCase();
                             } else if (file.filename) {
                                 // If filename contains path, get just the filename part
                                 displayName = file.filename.split('/').pop() || file.filename;
+                                fileExtension = displayName.split('.').pop().toLowerCase();
                             } else {
                                 displayName = 'Uploaded file';
+                                fileExtension = '';
+                            }
+                            
+                            // Set appropriate icon based on file extension
+                            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(fileExtension)) {
+                                fileIcon = '🖼️';
+                            } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(fileExtension)) {
+                                fileIcon = '🎬';
+                            } else if (['mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a'].includes(fileExtension)) {
+                                fileIcon = '🎵';
+                            } else if (['pdf'].includes(fileExtension)) {
+                                fileIcon = '📄';
+                            } else if (['doc', 'docx'].includes(fileExtension)) {
+                                fileIcon = '📝';
+                            } else if (['xls', 'xlsx'].includes(fileExtension)) {
+                                fileIcon = '📊';
+                            } else if (['ppt', 'pptx'].includes(fileExtension)) {
+                                fileIcon = '📽️';
+                            } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExtension)) {
+                                fileIcon = '🗜️';
+                            } else if (['txt', 'rtf'].includes(fileExtension)) {
+                                fileIcon = '📃';
+                            } else if (['js', 'css', 'html', 'json', 'xml'].includes(fileExtension)) {
+                                fileIcon = '💻';
+                            } else {
+                                fileIcon = '📄';
                             }
                             %>
-                            <%= displayName %>
+                            <%= fileIcon %> <%= displayName %>
                         </div>
                         <% if (file.uploadDate || (typeof file === 'object' && file.uploadDate)) { %>
                         <div class="file-date">
@@ -703,7 +780,7 @@
                         
                         if (typeof file === 'string') {
                             // Old format - file is just a string (public_id)
-                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file}`;
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/raw/upload/${file}`;
                             fileId = file;
                             fileName = file;
                         } else if (file.cloudinaryUrl) {
@@ -712,20 +789,26 @@
                             fileId = file.filename || file.publicId || file.originalName;
                             fileName = file.originalName || file.filename;
                         } else if (file.filename) {
-                            // New format without cloudinaryUrl - construct URL
-                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.filename}`;
+                            // New format without cloudinaryUrl - construct URL based on file type
+                            const extension = file.originalName ? file.originalName.split('.').pop().toLowerCase() : '';
+                            const resourceType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension) ? 'image' : 
+                                               (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension) ? 'video' : 'raw');
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.filename}`;
                             fileId = file.filename;
                             fileName = file.originalName || file.filename;
                         } else if (file.publicId) {
-                            // Use publicId
-                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.publicId}`;
+                            // Use publicId - determine resource type from original name
+                            const extension = file.originalName ? file.originalName.split('.').pop().toLowerCase() : '';
+                            const resourceType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension) ? 'image' : 
+                                               (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension) ? 'video' : 'raw');
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.publicId}`;
                             fileId = file.publicId;
                             fileName = file.originalName || file.publicId;
                         }
                         
                         // Ensure we always have a fileUrl and fileId
                         if (!fileUrl && fileId) {
-                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${fileId}`;
+                            fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/raw/upload/${fileId}`;
                         }
                         %>
                         <a href="<%= fileUrl || '#' %>" 

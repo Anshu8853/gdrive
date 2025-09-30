@@ -976,7 +976,51 @@
                                     <div class="file-item">
                                         <div class="file-info">
                                             <div class="file-name">
-                                                📄 <%= file.originalName || file.originalname || (typeof file === 'string' ? file : 'Unknown file') %>
+                                                <% 
+                                                let displayName = '';
+                                                let fileExtension = '';
+                                                let fileIcon = '';
+                                                
+                                                if (typeof file === 'string') {
+                                                    displayName = file;
+                                                    fileIcon = '📄';
+                                                } else if (file.originalName) {
+                                                    displayName = file.originalName;
+                                                    fileExtension = file.originalName.split('.').pop().toLowerCase();
+                                                } else if (file.originalname) {
+                                                    displayName = file.originalname;
+                                                    fileExtension = file.originalname.split('.').pop().toLowerCase();
+                                                } else {
+                                                    displayName = 'Unknown file';
+                                                    fileIcon = '📄';
+                                                }
+                                                
+                                                // Set appropriate icon based on file extension
+                                                if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(fileExtension)) {
+                                                    fileIcon = '🖼️';
+                                                } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(fileExtension)) {
+                                                    fileIcon = '🎬';
+                                                } else if (['mp3', 'wav', 'aac', 'ogg', 'flac', 'm4a'].includes(fileExtension)) {
+                                                    fileIcon = '🎵';
+                                                } else if (['pdf'].includes(fileExtension)) {
+                                                    fileIcon = '📄';
+                                                } else if (['doc', 'docx'].includes(fileExtension)) {
+                                                    fileIcon = '📝';
+                                                } else if (['xls', 'xlsx'].includes(fileExtension)) {
+                                                    fileIcon = '📊';
+                                                } else if (['ppt', 'pptx'].includes(fileExtension)) {
+                                                    fileIcon = '📽️';
+                                                } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExtension)) {
+                                                    fileIcon = '🗜️';
+                                                } else if (['txt', 'rtf'].includes(fileExtension)) {
+                                                    fileIcon = '📃';
+                                                } else if (['js', 'css', 'html', 'json', 'xml'].includes(fileExtension)) {
+                                                    fileIcon = '💻';
+                                                } else if (!fileIcon) {
+                                                    fileIcon = '📄';
+                                                }
+                                                %>
+                                                <%= fileIcon %> <%= displayName %>
                                                 <span class="file-size tooltip" data-tooltip="File size">
                                                     (<%= (file.size / 1024).toFixed(1) %> KB)
                                                 </span>
@@ -997,16 +1041,24 @@
                                                 let fileUrl = '';
                                                 if (typeof file === 'string') {
                                                     // Old format - string filename
-                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file}`;
+                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/raw/upload/${file}`;
                                                 } else if (file.cloudinaryUrl) {
                                                     // New format - file has cloudinaryUrl
                                                     fileUrl = file.cloudinaryUrl;
                                                 } else if (file.filename) {
-                                                    // New format without cloudinaryUrl - construct URL
-                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.filename}`;
+                                                    // New format without cloudinaryUrl - construct URL based on file type
+                                                    const originalName = file.originalName || file.originalname || '';
+                                                    const extension = originalName.split('.').pop().toLowerCase();
+                                                    const resourceType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension) ? 'image' : 
+                                                                       (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension) ? 'video' : 'raw');
+                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.filename}`;
                                                 } else if (file.publicId) {
-                                                    // Use publicId if available
-                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${file.publicId}`;
+                                                    // Use publicId - determine resource type from original name
+                                                    const originalName = file.originalName || file.originalname || '';
+                                                    const extension = originalName.split('.').pop().toLowerCase();
+                                                    const resourceType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension) ? 'image' : 
+                                                                       (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension) ? 'video' : 'raw');
+                                                    fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.publicId}`;
                                                 }
                                                 
                                                 // Get file identifier for deletion
