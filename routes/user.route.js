@@ -80,7 +80,8 @@ router.post('/register/send-otp',
                 return res.render('register', {
                     step: 1,
                     error: 'Email already registered. Please use a different email or login.',
-                    success: null
+                    success: null,
+                    showEmailExistsPopup: true
                 });
             }
 

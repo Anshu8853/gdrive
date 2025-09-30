@@ -27,6 +27,94 @@
         .otp-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
         .otp-input { text-align: center; font-size: 18px; letter-spacing: 5px; font-family: monospace; }
         .email-display { background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; text-align: center; }
+        
+        /* Popup Modal Styles */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .popup-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            z-index: 1001;
+        }
+        .popup-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .popup-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #dc3545;
+        }
+        .popup-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .popup-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .popup-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .popup-btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .popup-btn-primary:hover {
+            background: #0056b3;
+        }
+        .popup-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .popup-btn-secondary:hover {
+            background: #545b62;
+        }
+        .popup-show {
+            display: block !important;
+        }
+        
+        /* Animation */
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.7);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        .popup-modal {
+            animation: fadeInScale 0.3s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -111,7 +199,7 @@
             </div>
             <% } %>
             
-            <form action="/user/register/send-otp" method="POST">
+            <form action="/user/register/send-otp" method="POST" id="emailForm">
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" placeholder="Enter your email" required>
@@ -124,6 +212,22 @@
                 <a href="/user/login">Already have an account? Login</a>
             </div>
         <% } %>
+    </div>
+
+    <!-- Popup Modal for Already Registered Email -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup-modal">
+            <div class="popup-icon">⚠️</div>
+            <div class="popup-title">Email Already Registered</div>
+            <div class="popup-message">
+                This email address is already associated with an account. 
+                Would you like to login instead or try with a different email?
+            </div>
+            <div class="popup-buttons">
+                <a href="/user/login" class="popup-btn popup-btn-primary">Go to Login</a>
+                <button class="popup-btn popup-btn-secondary" onclick="closePopup()">Try Different Email</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -139,6 +243,39 @@
                 }
             });
         }
+
+        // Show popup if there's an error about email already being registered
+        <% if (typeof showEmailExistsPopup !== 'undefined' && showEmailExistsPopup) { %>
+            showPopup();
+        <% } %>
+
+        function showPopup() {
+            document.getElementById('popupOverlay').classList.add('popup-show');
+        }
+
+        function closePopup() {
+            document.getElementById('popupOverlay').classList.remove('popup-show');
+            // Clear the email input
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                emailInput.value = '';
+                emailInput.focus();
+            }
+        }
+
+        // Close popup when clicking outside
+        document.getElementById('popupOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePopup();
+            }
+        });
+
+        // Close popup with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePopup();
+            }
+        });
     </script>
 </body>
 </html>
