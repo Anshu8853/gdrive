@@ -4,54 +4,237 @@
     <meta charset="UTF-8">
     <title>Login - GDrive</title>
     <style>
-        body { font-family: Arial; background: #f0f0f0; margin: 0; padding: 20px; }
-        .container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #333; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background: #007bff; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
-        .success { background: #d4edda; color: #155724; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
-        .links { text-align: center; margin-top: 20px; }
-        .links a { color: #007bff; text-decoration: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 450px; 
+            width: 100%;
+            background: white; 
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        h1 { 
+            text-align: center; 
+            color: #2c3e50; 
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: #555; 
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input { 
+            width: 100%; 
+            padding: 15px 20px; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 12px; 
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button { 
+            width: 100%; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            padding: 16px; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        button:active { transform: translateY(0); }
+        .error { 
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white; 
+            padding: 15px 20px; 
+            margin-bottom: 20px; 
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+        .success { 
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            color: white; 
+            padding: 15px 20px; 
+            margin-bottom: 20px; 
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(81, 207, 102, 0.3);
+        }
+        .links { 
+            text-align: center; 
+            margin-top: 25px; 
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        .links a { 
+            color: #667eea; 
+            text-decoration: none; 
+            font-weight: 600;
+            transition: color 0.3s ease;
+            margin: 0 10px;
+        }
+        .links a:hover { color: #764ba2; }
+        .description { 
+            text-align: center; 
+            color: #6c757d; 
+            margin-bottom: 30px; 
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .icon { 
+            text-align: center; 
+            font-size: 60px; 
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>GDrive Login</h1>
+        <div class="icon">🔐</div>
+        
+        <h1>🚀 Welcome Back</h1>
+        <p class="description">Sign in to access your GDrive account and manage your files securely.</p>
         
         <% if (typeof success !== 'undefined' && success) { %>
         <div class="success">
-            <strong>✓ Success!</strong> <%= success %>
+            <strong>✅ Success!</strong> <%= success %>
         </div>
         <% } %>
         
         <% if (typeof error !== 'undefined' && error) { %>
         <div class="error">
-            <strong>Login failed!</strong> <%= error %>
+            <strong>⚠️ Login failed!</strong> <%= error %>
         </div>
         <% } %>
         
         <form action="/user/login" method="POST">
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter username" required>
+                <label for="username">👤 Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required>
             </div>
             
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter password" required>
+                <label for="password">🔒 Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
             
-            <button type="submit">Sign In</button>
+            <button type="submit">🚀 Sign In</button>
         </form>
         
         <div class="links">
-            <a href="/user/forgot-password">Forgot Password?</a><br><br>
-            <a href="/user/register">Create Account</a>
+            <a href="/user/forgot-password">🔑 Forgot Password?</a>
+            <a href="/user/register">✨ Create Account</a>
         </div>
     </div>
+    <script>
+        // Enhanced form validation
+        const form = document.querySelector('form');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        
+        // Real-time input validation
+        usernameInput.addEventListener('input', function(e) {
+            const value = this.value.trim();
+            if (value.length > 0) {
+                if (value.length >= 3) {
+                    this.style.borderColor = '#4caf50';
+                    this.style.background = 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)';
+                } else {
+                    this.style.borderColor = '#ffc107';
+                    this.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
+                }
+            } else {
+                this.style.borderColor = '#e1e8ed';
+                this.style.background = '#f8f9fa';
+            }
+        });
+        
+        passwordInput.addEventListener('input', function(e) {
+            const value = this.value;
+            if (value.length > 0) {
+                if (value.length >= 6) {
+                    this.style.borderColor = '#4caf50';
+                    this.style.background = 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)';
+                } else {
+                    this.style.borderColor = '#ffc107';
+                    this.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
+                }
+            } else {
+                this.style.borderColor = '#e1e8ed';
+                this.style.background = '#f8f9fa';
+            }
+        });
+        
+        // Form submission enhancement
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '🔄 Signing In...';
+            submitBtn.style.opacity = '0.7';
+            
+            // Re-enable after 3 seconds in case of network issues
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                submitBtn.style.opacity = '1';
+            }, 3000);
+        });
+        
+        // Add loading animation on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.6s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
 </body>
 </html>
