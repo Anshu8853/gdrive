@@ -100,8 +100,16 @@ router.post('/delete-user', isAdmin, async (req, res, next) => {
     try {
         const { userId } = req.body;
         
+        console.log('Delete user request - userId:', userId);
+        console.log('Delete user request - req.user:', req.user);
+        
         if (!userId) {
             return res.redirect('/admin/dashboard?error=User ID is required');
+        }
+
+        if (!req.user || !req.user.userId) {
+            console.error('Admin user information is missing');
+            return res.redirect('/admin/dashboard?error=Admin authentication error');
         }
 
         console.log(`Admin ${req.user.username} attempting to delete user ${userId}`);
@@ -113,7 +121,10 @@ router.post('/delete-user', isAdmin, async (req, res, next) => {
         }
 
         // Prevent admin from deleting themselves
-        if (user._id.toString() === req.user._id.toString()) {
+        const adminId = req.user.userId.toString ? req.user.userId.toString() : req.user.userId;
+        const targetUserId = user._id.toString ? user._id.toString() : user._id;
+        
+        if (adminId === targetUserId) {
             return res.redirect('/admin/dashboard?error=You cannot delete your own account');
         }
 
@@ -169,8 +180,16 @@ router.delete('/delete-user/:userId', isAdmin, async (req, res) => {
     try {
         const { userId } = req.params;
         
+        console.log('DELETE user request - userId:', userId);
+        console.log('DELETE user request - req.user:', req.user);
+        
         if (!userId) {
             return res.status(400).json({ success: false, error: 'User ID is required' });
+        }
+
+        if (!req.user || !req.user.userId) {
+            console.error('Admin user information is missing');
+            return res.status(401).json({ success: false, error: 'Admin authentication error' });
         }
 
         // Get the user first to check files and prevent admin self-deletion
@@ -180,7 +199,10 @@ router.delete('/delete-user/:userId', isAdmin, async (req, res) => {
         }
 
         // Prevent admin from deleting themselves
-        if (user._id.toString() === req.user._id.toString()) {
+        const adminId = req.user.userId.toString ? req.user.userId.toString() : req.user.userId;
+        const targetUserId = user._id.toString ? user._id.toString() : user._id;
+        
+        if (adminId === targetUserId) {
             return res.status(400).json({ success: false, error: 'You cannot delete your own account' });
         }
 
