@@ -247,4 +247,63 @@ router.delete('/delete-user/:userId', isAdmin, async (req, res) => {
     }
 });
 
+// Admin file serving route for authenticated access
+router.get('/file/:userId/:fileId', isAdmin, async (req, res) => {
+    try {
+        const { userId, fileId } = req.params;
+        
+        // Find the user and verify the file exists
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Check if the file belongs to this user
+        const userFile = user.file && user.file.find(file => {
+            if (typeof file === 'string') {
+                return file === fileId;
+            } else if (file.filename) {
+                return file.filename === fileId;
+            } else if (file.publicId) {
+                return file.publicId === fileId;
+            }
+            return false;
+        });
+        
+        if (!userFile) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+        
+        // Generate Cloudinary URL and redirect
+        let fileUrl;
+        const extension = userFile.originalName || userFile.originalname ? 
+            (userFile.originalName || userFile.originalname).split('.').pop().toLowerCase() : '';
+        
+        if (typeof userFile === 'string') {
+            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+        } else if (userFile.cloudinaryUrl) {
+            fileUrl = userFile.cloudinaryUrl;
+        } else {
+            let resourceType;
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension)) {
+                resourceType = 'image';
+            } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) {
+                resourceType = 'video';
+            } else {
+                resourceType = 'raw';
+            }
+            
+            const publicId = userFile.filename || userFile.publicId;
+            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
+        }
+        
+        // Redirect to the Cloudinary URL
+        res.redirect(fileUrl);
+        
+    } catch (error) {
+        console.error('Admin file serving error:', error);
+        res.status(500).json({ error: 'Failed to serve file' });
+    }
+});
+
 module.exports = router;

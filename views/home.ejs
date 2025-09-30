@@ -839,16 +839,14 @@
                         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension);
                         const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension);
                         
-                        let viewUrl = fileUrl;
-                        let downloadUrl = fileUrl;
+                        // Use our authenticated file serving route
+                        let viewUrl = `/user/file/${fileId}`;
+                        let downloadUrl = viewUrl;
                         
                         if (isPdf) {
-                            // For PDFs, create a view URL that opens in browser and download URL
-                            viewUrl = fileUrl + '#view=FitH';
-                            downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
-                        } else if (!isImage && !isVideo) {
-                            // For other documents, force download
-                            downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+                            // For PDFs, we'll handle the viewing through our route
+                            viewUrl = `/user/file/${fileId}`;
+                            downloadUrl = `/user/file/${fileId}`;
                         }
                         %>
                         
@@ -861,7 +859,8 @@
                             <a href="<%= downloadUrl || '#' %>" 
                                target="_blank" class="view-btn"
                                style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);"
-                               <% if (!downloadUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
+                               <% if (!downloadUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>
+                               download>
                                 📥 Download
                             </a>
                         <% } else { %>

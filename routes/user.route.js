@@ -41,7 +41,9 @@ const storage = new CloudinaryStorage({
             // Other
             'epub', 'mobi', 'psd', 'ai', 'sketch'
         ],
-        resource_type: 'auto' // This allows different file types
+        resource_type: 'auto', // This allows different file types
+        access_mode: 'public', // Ensure files are publicly accessible
+        type: 'upload' // Specify upload type for public access
     },
 });
 
@@ -824,6 +826,65 @@ router.post('/reset-password/:token',
 router.get('/logout', (req, res) => {
     res.clearCookie('token');
     res.redirect('/user/login');
+});
+
+// File serving route for authenticated access
+router.get('/file/:fileId', isAuthenticated, async (req, res) => {
+    try {
+        const { fileId } = req.params;
+        const userId = req.user.userId;
+        
+        // Find the user and verify they own this file
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Check if the file belongs to this user
+        const userFile = user.file && user.file.find(file => {
+            if (typeof file === 'string') {
+                return file === fileId;
+            } else if (file.filename) {
+                return file.filename === fileId;
+            } else if (file.publicId) {
+                return file.publicId === fileId;
+            }
+            return false;
+        });
+        
+        if (!userFile) {
+            return res.status(403).json({ error: 'File not found or access denied' });
+        }
+        
+        // Generate Cloudinary URL and redirect
+        let fileUrl;
+        const extension = userFile.originalName ? userFile.originalName.split('.').pop().toLowerCase() : '';
+        
+        if (typeof userFile === 'string') {
+            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${userFile}`;
+        } else if (userFile.cloudinaryUrl) {
+            fileUrl = userFile.cloudinaryUrl;
+        } else {
+            let resourceType;
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension)) {
+                resourceType = 'image';
+            } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) {
+                resourceType = 'video';
+            } else {
+                resourceType = 'raw';
+            }
+            
+            const publicId = userFile.filename || userFile.publicId;
+            fileUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload/${publicId}`;
+        }
+        
+        // Redirect to the Cloudinary URL
+        res.redirect(fileUrl);
+        
+    } catch (error) {
+        console.error('File serving error:', error);
+        res.status(500).json({ error: 'Failed to serve file' });
+    }
 });
 
 module.exports = router;

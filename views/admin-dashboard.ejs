@@ -1098,24 +1098,16 @@
                                             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension);
                                             const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension);
                                             
-                                            let viewUrl = fileUrl;
-                                            let downloadUrl = fileUrl;
-                                            
-                                            if (isPdf) {
-                                                // For PDFs, create a view URL that opens in browser
-                                                viewUrl = fileUrl + '#view=FitH';
-                                                downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
-                                            } else if (!isImage && !isVideo) {
-                                                // For other documents, force download
-                                                downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
-                                            }
+                                            // Use our authenticated admin file serving route
+                                            let viewUrl = `/admin/file/${user._id}/${fileId}`;
+                                            let downloadUrl = viewUrl;
                                             %>
                                             
                                             <% if (isPdf) { %>
                                                 <a href="<%= viewUrl %>" class="view-btn" target="_blank" style="margin-bottom: 5px;">
                                                     📖 View PDF
                                                 </a>
-                                                <a href="<%= downloadUrl %>" class="view-btn" target="_blank" 
+                                                <a href="<%= downloadUrl %>" class="view-btn" target="_blank" download
                                                    style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
                                                     📥 Download
                                                 </a>
