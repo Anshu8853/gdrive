@@ -22,6 +22,7 @@ const adminRouter = require('./routes/admin.routes');
 const connectToDB = require('./routes/config/db');
 const cookieParser = require('cookie-parser');
 const indexRouter = require('./routes/index.routes');
+const debugRouter = require('./routes/debug.routes');
 
 // Connect to MongoDB
 (async () => {
@@ -60,6 +61,7 @@ app.use('/test', express.static(__dirname));
 app.use('/', indexRouter);
 app.use('/user', userRouter);
 app.use('/admin', adminRouter);
+app.use('/debug', debugRouter);
 
 // Centralized error handler
 app.use((err, req, res, next) => {
