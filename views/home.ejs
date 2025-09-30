@@ -309,15 +309,18 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: stretch;
         }
         .view-btn {
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
             text-align: center;
+            padding: 10px 15px;
+            font-size: 14px;
         }
         .delete-btn {
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
         }
         
         /* Tooltip for file extensions */
@@ -791,16 +794,34 @@
                         } else if (file.filename) {
                             // New format without cloudinaryUrl - construct URL based on file type
                             const extension = file.originalName ? file.originalName.split('.').pop().toLowerCase() : '';
-                            const resourceType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension) ? 'image' : 
-                                               (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension) ? 'video' : 'raw');
+                            let resourceType, transformations = '';
+                            
+                            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension)) {
+                                resourceType = 'image';
+                            } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) {
+                                resourceType = 'video';
+                            } else {
+                                // For PDFs and other documents, use raw resource type
+                                resourceType = 'raw';
+                            }
+                            
                             fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.filename}`;
                             fileId = file.filename;
                             fileName = file.originalName || file.filename;
                         } else if (file.publicId) {
                             // Use publicId - determine resource type from original name
                             const extension = file.originalName ? file.originalName.split('.').pop().toLowerCase() : '';
-                            const resourceType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension) ? 'image' : 
-                                               (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension) ? 'video' : 'raw');
+                            let resourceType;
+                            
+                            if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension)) {
+                                resourceType = 'image';
+                            } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension)) {
+                                resourceType = 'video';
+                            } else {
+                                // For PDFs and other documents, use raw resource type
+                                resourceType = 'raw';
+                            }
+                            
                             fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/${resourceType}/upload/${file.publicId}`;
                             fileId = file.publicId;
                             fileName = file.originalName || file.publicId;
@@ -811,11 +832,45 @@
                             fileUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/raw/upload/${fileId}`;
                         }
                         %>
-                        <a href="<%= fileUrl || '#' %>" 
-                           target="_blank" class="view-btn"
-                           <% if (!fileUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
-                            👁️ View
-                        </a>
+                        <% 
+                        // Special handling for different file types
+                        const extension = fileName.split('.').pop().toLowerCase();
+                        const isPdf = extension === 'pdf';
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension);
+                        const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension);
+                        
+                        let viewUrl = fileUrl;
+                        let downloadUrl = fileUrl;
+                        
+                        if (isPdf) {
+                            // For PDFs, create a view URL that opens in browser and download URL
+                            viewUrl = fileUrl + '#view=FitH';
+                            downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+                        } else if (!isImage && !isVideo) {
+                            // For other documents, force download
+                            downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+                        }
+                        %>
+                        
+                        <% if (isPdf) { %>
+                            <a href="<%= viewUrl || '#' %>" 
+                               target="_blank" class="view-btn"
+                               <% if (!viewUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
+                                📖 View PDF
+                            </a>
+                            <a href="<%= downloadUrl || '#' %>" 
+                               target="_blank" class="view-btn"
+                               style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);"
+                               <% if (!downloadUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
+                                📥 Download
+                            </a>
+                        <% } else { %>
+                            <a href="<%= viewUrl || '#' %>" 
+                               target="_blank" class="view-btn"
+                               <% if (!viewUrl) { %>onclick="alert('File URL not available'); return false;"<% } %>>
+                                👁️ View
+                            </a>
+                        <% } %>
                         <form action="/user/delete-file" method="POST" style="display: inline;">
                             <input type="hidden" name="filename" value="<%= fileId %>">
                             <button type="submit" class="delete-btn" onclick="return confirm('⚠️ Are you sure you want to delete this file? This action cannot be undone!')">
