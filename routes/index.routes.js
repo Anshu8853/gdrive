@@ -9,17 +9,21 @@ router.get('/', (req, res) => {
 
 router.get('/home', isAuthenticated, async (req, res, next) => {
     try {
+        console.log('📍 /home route - user ID from token:', req.user.userId);
+        
         const user = await userModel.findById(req.user.userId);
         if (!user) {
-            console.log('User not found, clearing cookie and redirecting to login');
+            console.log('❌ User not found in database, clearing cookie and redirecting to login');
             res.clearCookie('token');
             return res.redirect('/user/login');
         }
-        
+
+        console.log('✅ User found:', user.username);
+
         // Handle success message from upload
         let success = null;
         let error = null;
-        
+
         if (req.query.upload === 'success') {
             success = 'File uploaded successfully!';
         }
@@ -29,21 +33,21 @@ router.get('/home', isAuthenticated, async (req, res, next) => {
         if (req.query.error) {
             error = req.query.error;
         }
-        
+
         // Map file array to files for template consistency
         user.files = user.file || [];
-        
-        res.render('home', { 
-            user, 
+
+        console.log('✅ Rendering home with user:', user.username);
+        res.render('home', {
+            user,
             success,
             error,
-            cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME 
+            cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME
         });
     } catch (error) {
-        console.error('Home route error:', error);
+        console.error('💥 Home route error:', error.message);
+        console.error('Stack:', error.stack);
         res.clearCookie('token');
-        res.redirect('/user/login');
-    }
-});
+        res.redirect('/user/login?error=' + encodeURIComponent(error.message));
 
 module.exports = router;
