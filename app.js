@@ -115,6 +115,20 @@ app.get('/health', (req, res) => {
     res.json(status);
 });
 
+// Debug endpoint for login testing
+app.get('/debug/test-login', (req, res) => {
+    res.json({
+        message: 'Login test endpoint',
+        test: 'This means your app is running correctly. If login shows an error, check the steps below.',
+        steps: [
+            '1. Did you register an account? Visit /user/register to create one',
+            '2. Check Vercel logs for actual error: Dashboard → Logs',
+            '3. Test database: Go to /health to check MongoDB status',
+            '4. Try the test endpoint: /user/login'
+        ]
+    });
+});
+
 // Note: Static uploads folder not needed since using Cloudinary
 app.use('/test', express.static(__dirname));
 
