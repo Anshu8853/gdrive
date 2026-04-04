@@ -99,9 +99,23 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Note: Static uploads folder not needed since using Cloudinary
+// Health check route (before other routes)
+app.get('/health', (req, res) => {
+    const mongoose = require('mongoose');
+    const status = {
+        app: 'running',
+        timestamp: new Date().toISOString(),
+        mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        env: {
+            MONGODB_URI: process.env.MONGODB_URI ? '✅ set' : '❌ missing',
+            JWT_SECRET: process.env.JWT_SECRET ? '✅ set' : '❌ missing',
+            CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME ? '✅ set' : '❌ missing'
+        }
+    };
+    res.json(status);
+});
 
-// Serve test files (for development)
+// Note: Static uploads folder not needed since using Cloudinary
 app.use('/test', express.static(__dirname));
 
 app.use('/', indexRouter);
@@ -111,8 +125,18 @@ app.use('/debug', debugRouter);
 
 // Centralized error handler
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
+    console.error('❌ ERROR DETAILS:');
+    console.error('Message:', err.message);
+    console.error('Stack:', err.stack);
+    console.error('URL:', req.url);
+    console.error('Method:', req.method);
+    
+    // Send detailed error for debugging
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    res.status(500).json({ 
+        message: isDevelopment ? err.message : 'Something went wrong!',
+        error: isDevelopment ? err.stack : undefined
+    });
 });
 
 // Export the app for Vercel

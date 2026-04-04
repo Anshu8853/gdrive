@@ -340,33 +340,42 @@ router.post('/login',
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {   
+                console.log('❌ Login validation failed:', errors.array());
                 return res.render('login', { error: 'Invalid data' });
             }
             const { username, password } = req.body;
+            console.log(`🔍 Login attempt for username: ${username}`);
 
             const user = await userModel.findOne({ username });
 
             if(!user){
+                console.log(`❌ User not found: ${username}`);
                 return res.render('login', { error: 'Invalid username or password' });
             }
-            const isMatch = await bcrypt.compare(password, user.password);
+            console.log(`✅ User found: ${username}`);
+            
+            const isMatch = await bcrypt.compare(password, user.password);      
 
             if(!isMatch){
+                console.log(`❌ Password mismatch for user: ${username}`);
                 return res.render('login', { error: 'Invalid username or password' });
             }
-            const token = jwt.sign({ userId: user._id, username: user.username, email: user.email, role: user.role },
-                process.env.JWT_SECRET, { expiresIn: '24h' ,});
+            console.log(`✅ Password verified for user: ${username}`);
             
+            if (!process.env.JWT_SECRET) {
+                console.error('❌ CRITICAL: JWT_SECRET is not set!');
+                throw new Error('JWT_SECRET environment variable is missing');
+            }
+            
+            const token = jwt.sign({ userId: user._id, username: user.username, email: user.email, role: user.role },
+                process.env.JWT_SECRET, { expiresIn: '24h' });
+
+            console.log(`✅ JWT token created for user: ${username}`);
             res.cookie('token', token);
+            console.log(`✅ Login successful for user: ${username}`);
             res.redirect('/home');
         } catch (error) {
-            next(error);
-        }
-      })
-
-router.post('/upload', isAuthenticated, (req, res, next) => {
-    upload.single('file')(req, res, (err) => {
-        if (err) {
+            console.error('💥 Login error:', error.message);
             console.error('Multer error:', err);
             if (err instanceof multer.MulterError) {
                 if (err.code === 'LIMIT_FILE_SIZE') {
