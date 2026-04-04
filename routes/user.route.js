@@ -382,15 +382,7 @@ router.post('/login',
 );
 
 // Upload route
-router.post('/upload', isAuthenticated, upload.single('file'), (req, res, next) => {
-    // Multer error handling middleware
-    if (req.file) {
-        next();
-    } else {
-        // No file error is handled below
-        next();
-    }
-}, async (req, res, next) => {
+router.post('/upload', isAuthenticated, upload.single('file'), async (req, res, next) => {
     try {
         console.log('Upload attempt - req.file:', req.file);
         console.log('User ID:', req.user.userId);
