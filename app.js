@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config(); // This must be at the top
 
-// Environment variable check
+// Environment variable check with graceful logging
 const requiredEnv = [
     'MONGODB_URI',
     'JWT_SECRET',
@@ -9,11 +9,25 @@ const requiredEnv = [
     'CLOUDINARY_API_KEY',
     'CLOUDINARY_API_SECRET'
 ];
+const missingEnv = [];
 requiredEnv.forEach(v => {
     if (!process.env[v]) {
-        throw new Error(`FATAL ERROR: Environment variable ${v} is not defined.`);
+        missingEnv.push(v);
+        console.warn(`⚠️  WARNING: Environment variable ${v} is not defined.`);
     }
 });
+if (missingEnv.length > 0) {
+    console.error(`\n❌ CRITICAL: Missing ${missingEnv.length} required environment variable(s): ${missingEnv.join(', ')}`);
+    console.error('\n📋 Add these to Vercel dashboard:');
+    missingEnv.forEach(v => console.error(`   - ${v}`));
+    console.error('\n⏱️  App will attempt to continue for 30 seconds, then exit.\n');
+    
+    // Graceful timeout to allow Vercel to capture logs
+    setTimeout(() => {
+        console.error('❌ Exiting due to missing environment variables.');
+        process.exit(1);
+    }, 30000);
+}
 
 const express = require('express');
 const path = require('path');
@@ -25,15 +39,19 @@ const cookieParser = require('cookie-parser');
 const indexRouter = require('./routes/index.routes');
 const debugRouter = require('./routes/debug.routes');
 
-// Connect to MongoDB
-(async () => {
-  try {
-    await connectToDB();
-  } catch (error) {
-    console.error("Failed to connect to the database. The application will not start.", error);
-    process.exit(1);
-  }
-})();
+// Track connection status
+let dbConnected = false;
+
+// Connect to MongoDB (non-blocking - will retry on first request)
+connectToDB()
+  .then(() => {
+    dbConnected = true;
+    console.log('✅ MongoDB connected on startup');
+  })
+  .catch(error => {
+    console.warn('⚠️  MongoDB connection failed on startup, will retry on first request:', error.message);
+    // Don't crash - try again when first request comes in
+  });
 
 const app = express();
 
@@ -61,7 +79,23 @@ app.use(session({
 
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
+    
+    // Retry MongoDB connection if not connected
+    if (!dbConnected && req.path !== '/debug') {
+        connectToDB()
+          .then(() => {
+            dbConnected = true;
+            console.log('✅ MongoDB connected on request');
+            next();
+          })
+          .catch(error => {
+            console.error('❌ MongoDB still not connected:', error.message);
+            // Continue anyway - some routes might not need DB
+            next();
+          });
+    } else {
+        next();
+    }
 });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
