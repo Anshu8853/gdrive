@@ -376,17 +376,20 @@ router.post('/login',
             res.redirect('/home');
         } catch (error) {
             console.error('💥 Login error:', error.message);
-            console.error('Multer error:', err);
-            if (err instanceof multer.MulterError) {
-                if (err.code === 'LIMIT_FILE_SIZE') {
-                    return res.redirect('/home?error=File size too large (max 50MB)');
-                }
-                return res.redirect('/home?error=Upload error: ' + err.message);
-            }
-            return res.redirect('/home?error=' + err.message);
+            next(error);
         }
+      }
+);
+
+// Upload route
+router.post('/upload', isAuthenticated, upload.single('file'), (req, res, next) => {
+    // Multer error handling middleware
+    if (req.file) {
         next();
-    });
+    } else {
+        // No file error is handled below
+        next();
+    }
 }, async (req, res, next) => {
     try {
         console.log('Upload attempt - req.file:', req.file);

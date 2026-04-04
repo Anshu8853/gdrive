@@ -49,5 +49,7 @@ router.get('/home', isAuthenticated, async (req, res, next) => {
         console.error('Stack:', error.stack);
         res.clearCookie('token');
         res.redirect('/user/login?error=' + encodeURIComponent(error.message));
+    }
+});
 
 module.exports = router;
