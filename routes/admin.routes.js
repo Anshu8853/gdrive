@@ -251,6 +251,8 @@ router.delete('/delete-user/:userId', isAdmin, async (req, res) => {
 router.get('/file/:userId/:fileId', isAdmin, async (req, res) => {
     try {
         const { userId, fileId } = req.params;
+        // Decode URL-encoded fileId (in case it contains slashes like drive-uploads/filename)
+        const decodedFileId = decodeURIComponent(fileId);
         
         // Find the user and verify the file exists
         const user = await userModel.findById(userId);
@@ -261,11 +263,11 @@ router.get('/file/:userId/:fileId', isAdmin, async (req, res) => {
         // Check if the file belongs to this user
         const userFile = user.file && user.file.find(file => {
             if (typeof file === 'string') {
-                return file === fileId;
+                return file === decodedFileId;
             } else if (file.filename) {
-                return file.filename === fileId;
+                return file.filename === decodedFileId;
             } else if (file.publicId) {
-                return file.publicId === fileId;
+                return file.publicId === decodedFileId;
             }
             return false;
         });

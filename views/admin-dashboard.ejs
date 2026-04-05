@@ -1098,8 +1098,8 @@
                                             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'].includes(extension);
                                             const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', '3gp'].includes(extension);
                                             
-                                            // Use our authenticated admin file serving route
-                                            let viewUrl = `/admin/file/${user._id}/${fileId}`;
+                                            // Use our authenticated admin file serving route - encode fileId in case it contains slashes
+                                            let viewUrl = `/admin/file/${user._id}/${encodeURIComponent(fileId)}`;
                                             let downloadUrl = viewUrl;
                                             %>
                                             
